@@ -1,48 +1,65 @@
 #!/bin/bash
 
 ########################
-# include the magic
+# Import Magic
 ########################
-. ./demo-magic.sh
-. ./helper_functions.sh
+. ./configuration/demo-magic.sh
+. ./configuration/helper_functions.sh
+. ./configuration/env
+########################
 
-# hide the evidence
-SCRIPT_PATH=`readlink -f “${BASH_SOURCE:-$0}”`
-TYPE_SPEED=80
-DEMO_PROMPT="${GREEN}➜ ${CYAN}"
 clear
+caption "Setting up Vault Cluster..."
 
-p "Setting up Vault Cluster..."
-kubectl create ns vault 2> /dev/null
-kubectl create secret generic vault-enterprise-license --from-file=license=vault.hclic --namespace vault 2> /dev/null
-helm upgrade -i vault hashicorp/vault --version 0.28.0 -f vault-values.yaml --namespace vault --create-namespace
+p "Installing Vault..."
+kubectl create ns $NAMESPACE 2> /dev/null
+kubectl create secret generic vault-enterprise-license --from-file=license=./configuration/vault.hclic --namespace $NAMESPACE 2> /dev/null
+helm upgrade -i $SERVICE_NAME hashicorp/vault --version 0.28.0 -f ./configuration/vault-values.yaml --namespace $NAMESPACE --create-namespace > /dev/null
 
-wait_for_pod_by_label "statefulset.kubernetes.io/pod-name=vault-0" "vault"
+wait_for_pod_by_label "statefulset.kubernetes.io/pod-name=$POD_NAME" $NAMESPACE
 
 
 p "Initializing Vault..."
-kubectl exec vault-0 -- vault operator init \
-    -key-shares=1 \
-    -key-threshold=1 \
-    -format=json > cluster-keys.json
+
+INIT_STATUS=$(kubectl exec $POD_NAME --namespace $NAMESPACE -- vault status -format=json | jq -r '.initialized')
+if [ "$INIT_STATUS" == "true" ]; then
+    p "Vault is already initialized."
+else
+    kubectl exec $POD_NAME -- vault operator init \
+        -key-shares=1 \
+        -key-threshold=1 \
+        -format=json > cluster-keys.json 
+fi
+
+VAULT_UNSEAL_KEY=$(jq -r ".unseal_keys_b64[]" cluster-keys.json)
+TOKEN_VAULT=$(jq -r ".root_token" cluster-keys.json)
+export VAULT_ADDR="http://127.0.0.1:8200"
 
 p "Unsealing Vault..."
-VAULT_UNSEAL_KEY=$(jq -r ".unseal_keys_b64[]" cluster-keys.json)
-kubectl exec -it vault-0 -- vault operator unseal $VAULT_UNSEAL_KEY
+SEALED_STATUS=$(kubectl exec $POD_NAME --namespace $NAMESPACE -- vault status -format=json | jq -r '.sealed')
+if [ "$SEALED_STATUS" == "false" ]; then
+    p "Vault is already unsealed."
+else
+    kubectl exec -it $POD_NAME -- vault operator unseal $VAULT_UNSEAL_KEY
+fi
 
-export VAULT_ADDR="https://127.0.0.1:8200"
-export VAULT_SKIP_VERIFY="true"
+p "Exposing Vault service..."
+if !(pgrep -f "kubectl port-forward svc/$SERVICE_NAME $PORT:$PORT --namespace=$NAMESPACE" > /dev/null); then
+    nohup kubectl port-forward svc/$SERVICE_NAME $PORT:$PORT --namespace=$NAMESPACE > /dev/null 2>&1 &
+fi
 
 p "Logging into Vault..."
-vault login $(jq -r ".root_token" cluster-keys.json)
+vault login $TOKEN_VAULT
 
 p "Done!"
-
 clear
 
-caption "Welcome to Vault Workshop"
+# Start workshop
+read -p "Do you want to start the workshop? (y/n): " response
 
-pe "vault status"
+# Check the user's response
+if [[ "$response" == "y" || "$response" == "Y" ]]; then
+    bash demo.sh
+fi
 
-p ''
 clear

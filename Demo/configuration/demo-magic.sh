@@ -10,7 +10,7 @@
 # when you press ENTER. It simulates typing and runs commands.
 #
 ###############################################################################
-echo "start app"
+
 # the speed to simulate typing the text
 TYPE_SPEED=35
 
@@ -218,7 +218,6 @@ while getopts ":dhncw:" opt; do
   esac
 done
 
-echo "type speed: $TYPE_SPEED"
 ##
 # Do not check for pv. This trusts the user to not set TYPE_SPEED later in the
 # demo in which case an error will occur if pv is not installed.

@@ -1,0 +1,11 @@
+export CONFIG_FILE="./configuration/demo_config.yaml"
+export NAMESPACE="vault"
+export SERVICE_NAME="vault"
+export POD_NAME="vault-0" 
+export PORT=8200
+export VAULT_UNSEAL_KEY=$(jq -r ".unseal_keys_b64[]" cluster-keys.json)
+export TOKEN_VAULT=$(jq -r ".root_token" cluster-keys.json)
+export VAULT_ADDR="http://127.0.0.1:8200"
+export YAML_PATH="./configuration/yamls" 
+export DEMO_FILES_PATH="./demos"
+export TYPE_SPEED=500
