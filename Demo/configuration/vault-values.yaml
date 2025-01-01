@@ -24,12 +24,11 @@ server:
       # The name of the Kubernetes secret that holds the enterprise license. The
       # secret must be in the same namespace that Vault is installed into.
       secretName: "vault-enterprise-license"
-      # The key within the Kubernetes secret that holds the enterprise license.
-      secretKey: "license"
+      # secretKey: "license"
 
    image:
-    repository: "hashicorp/vault"
-    tag: "1.16.1"
+    repository: "hashicorp/vault-enterprise"
+    tag: "1.16.14-ent"
 
    # resources:
    #    requests:
@@ -128,7 +127,7 @@ server:
                
                # Enable unauthenticated metrics access (necessary for Prometheus Operator)
                telemetry {
-               unauthenticated_metrics_access = "true"
+                  unauthenticated_metrics_access = "true"
                }
             }
             

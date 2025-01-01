@@ -9,7 +9,7 @@
 ########################
 
 clear
-caption "Welcome to Vault Workshop"
+caption "Welcome to Vault Demo"
 echo ""
 
 p "After preparing the environment, we now have a fully initialized Vault Cluster:"
@@ -31,3 +31,5 @@ for FILE in $demo_files; do
         echo "Demo file $FILE not found."
     fi
 done
+
+caption "Thanks for participating @Terasky"
