@@ -9,25 +9,27 @@
 ########################
 clear
 
+K8S_YAML_PATH="$YAML_PATH/k8s_dynamic_secrets"
+
 # Start demo here
 
 caption "K8s Dynamic Secret"
 
 p "After installing Vault with Helm, a 'vault' service account and secret were already created."
-pe "cat $YAML_PATH/vault-sa.yaml"
-pe "kubectl apply -f $YAML_PATH/vault-sa.yaml"
+pe "cat $K8S_YAML_PATH/vault-sa.yaml"
+pe "kubectl apply -f $K8S_YAML_PATH/vault-sa.yaml"
 
 echo ""
 
 p "Now, let's create the ClusterRole for full access to secrets."
-pe "cat $YAML_PATH/k8s-full-secrets-abilities-with-labels.yaml"
-pe "kubectl apply -f $YAML_PATH/k8s-full-secrets-abilities-with-labels.yaml"
+pe "cat $K8S_YAML_PATH/k8s-full-secrets-abilities-with-labels.yaml"
+pe "kubectl apply -f $K8S_YAML_PATH/k8s-full-secrets-abilities-with-labels.yaml"
 
 echo ""
 
 p "Now, create the ClusterRoleBinding to bind the 'vault' service account to the above role."
-pe "cat $YAML_PATH/vault-token-creator-binding.yaml"
-pe "kubectl apply -f $YAML_PATH/vault-token-creator-binding.yaml"
+pe "cat $K8S_YAML_PATH/vault-token-creator-binding.yaml"
+pe "kubectl apply -f $K8S_YAML_PATH/vault-token-creator-binding.yaml"
 
 echo ""
 
@@ -72,7 +74,7 @@ caption "K8s Dynamic Secret - Done"
 
 # Cleanup
 vault secrets disable kubernetes/ > /dev/null
-kubectl delete -f $YAML_PATH/k8s-full-secrets-abilities-with-labels.yaml > /dev/null
-kubectl delete -f $YAML_PATH/vault-token-creator-binding.yaml > /dev/null
+kubectl delete -f $K8S_YAML_PATH/k8s-full-secrets-abilities-with-labels.yaml > /dev/null
+kubectl delete -f $K8S_YAML_PATH/vault-token-creator-binding.yaml > /dev/null
 
 clear
