@@ -1,0 +1,142 @@
+global:
+  enabled: true
+  tlsDisable: true
+#   resources:
+#       requests:
+#          memory: 256Mi
+#          cpu: 250m
+#       limits:
+#          memory: 256Mi
+#          cpu: 250m
+
+injector:
+  enabled: true
+
+server:
+   enabled: true
+   
+   # [Enterprise Only] This value refers to a Kubernetes secret that you have
+   # created that contains your enterprise license. If you are not using an
+   # enterprise image or if you plan to introduce the license key via another
+   # route, then leave secretName blank ("") or set it to null.
+   # Requires Vault Enterprise 1.8 or later.
+   enterpriseLicense:
+      # The name of the Kubernetes secret that holds the enterprise license. The
+      # secret must be in the same namespace that Vault is installed into.
+      secretName: "vault-enterprise-license"
+      # secretKey: "license"
+
+   image:
+    repository: "hashicorp/vault-enterprise"
+    tag: "1.16.14-ent"
+
+   # resources:
+   #    requests:
+   #       memory: 8Gi
+   #       cpu: 2000m
+   #    limits:
+   #       memory: 16Gi
+   #       cpu: 2000m
+
+   # Configure the logging verbosity for the Vault server.
+   # Supported log levels include: trace, debug, info, warn, error
+   logLevel: "trace"
+
+   # For HA configuration and because we need to manually init the vault,
+   # we need to define custom readiness/liveness Probe settings
+   readinessProbe:
+      enabled: true
+      path: "/v1/sys/health?standbyok=true&sealedcode=204&uninitcode=204"
+   livenessProbe:
+      enabled: true
+      path: "/v1/sys/health?standbyok=true"
+      initialDelaySeconds: 60
+
+   auditStorage:
+      enabled: true
+
+   # Run Vault in "standalone" mode. This is the default mode that will deploy if
+   # no arguments are given to helm. This requires a PVC for data storage to use
+   # the "file" backend.  This mode is not highly available and should not be scaled
+   # past a single replica.
+   # standalone:
+   #    enabled: false
+
+   #    # config is a raw string of default configuration when using a Stateful
+   #    # deployment. Default is to use a PersistentVolumeClaim mounted at /vault/data
+   #    # and store data there. This is only used when using a Replica count of 1, and
+   #    # using a stateful set. This should be HCL.
+
+   #    # Note: Configuration files are stored in ConfigMaps so sensitive data
+   #    # such as passwords should be either mounted through extraSecretEnvironmentVars
+   #    # or through a Kube secret.  For more information see:
+   #    # https://developer.hashicorp.com/vault/docs/platform/k8s/helm/run#protecting-sensitive-vault-configurations
+   #    config: |
+   #       ui = true
+   #       disable_mlock = true
+   #       cluster_name = "vault-integrated-storage"
+
+   #       listener "tcp" {
+   #          tls_disable = 0
+   #          address = "[::]:8200"
+   #          cluster_address = "[::]:8201"
+            
+   #          tls_cert_file = "/vault/userconfig/vault-ha-tls/vault.crt"
+   #          tls_key_file  = "/vault/userconfig/vault-ha-tls/vault.key"
+   #          tls_client_ca_file = "/vault/userconfig/vault-ha-tls/vault.ca"
+
+   #          # Enable unauthenticated metrics access (necessary for Prometheus Operator)
+   #          telemetry {
+   #           unauthenticated_metrics_access = "true"
+   #          }
+   #       }
+
+   #       storage "file" {
+   #          path = "/vault/data"
+   #       }
+
+   #       # Configuration for enabling Prometheus metrics in your config.
+   #       telemetry {
+   #        prometheus_retention_time = "30s"
+   #        disable_hostname = true
+   #       }
+
+   # Run Vault in "HA" mode. There are no storage requirements unless the audit log
+   # persistence is required.  In HA mode Vault will configure itself to use Consul
+   # for its storage backend.  The default configuration provided will work the Consul
+   # Helm project by default.  It is possible to manually configure Vault to use a
+   # different HA backend.
+   ha:
+      enabled: true
+      replicas: 1
+      raft: 
+         enabled: true
+         setNodeId: true
+         config: |
+            cluster_name = "vault-integrated-storage"
+            disable_mlock = true
+
+            storage "raft" {
+               path    = "/vault/data/"
+            }
+
+            listener "tcp" {
+               tls_disable = 1
+               address = "[::]:8200"
+               cluster_address = "[::]:8201"
+               
+               # Enable unauthenticated metrics access (necessary for Prometheus Operator)
+               telemetry {
+                  unauthenticated_metrics_access = "true"
+               }
+            }
+            
+            service_registration "kubernetes" {}
+
+            ui = true
+
+            # Configuration for enabling Prometheus metrics in your config.
+            telemetry {
+               prometheus_retention_time = "30s"
+               disable_hostname = true
+            }

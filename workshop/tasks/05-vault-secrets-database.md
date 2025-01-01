@@ -190,14 +190,14 @@ In this section, we will configure the **Database Secret Engine** in Vault to dy
    ```   
 
    Try running this query
-   ```mongodb
+   ```js
    show dbs
    use admin
    show collections
    ```
 
    Now try running this query
-   ```mongodb
+   ```js
    use admin
    db.createCollection("testCollection")
    ```
