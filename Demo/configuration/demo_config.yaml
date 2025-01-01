@@ -1,5 +1,5 @@
 demo_files:
-# - ldap.sh #$
+- ldap.sh #$
 # - dynamic_secret_ssh.sh
 # - dynamic_secret_k8s.sh
 # - vault_secret_operator.sh
@@ -7,5 +7,4 @@ demo_files:
 # - vault_monitoring.sh 
 # - vault_automaic_backups.sh 
 # - vault_agent_deployment.sh 
-# - pki.sh #$
-# - adp.sh #
+# - pki.sh

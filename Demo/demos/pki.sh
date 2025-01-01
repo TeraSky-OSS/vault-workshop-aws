@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ########################
-# include the magic
+# Import magic
 ########################
 . ./configuration/demo-magic.sh
 . ./configuration/helper_functions.sh
@@ -122,7 +122,7 @@ caption "Step 6: rotate root CA"
 echo ""
 
 p "Rotate the root CA and create a new one."
-pe "vault write pki/root/rotate/internal common_name='example.com' issuer_name='root-2024'" ##$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+pe "vault write pki/root/rotate/internal common_name='example.com' issuer_name='root-2024-1'"
 
 echo ""
 
