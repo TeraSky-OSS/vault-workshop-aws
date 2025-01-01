@@ -113,7 +113,7 @@ echo ""
 p "Inspect the secret from within the pod"
 pe "kubectl exec $DEMO_POD_VSO -- printenv | grep ENV_ ; echo"
 
-p ""
+caption "Vault Secrets Operator - Done"
 
 # Cleanup
 kubectl delete --force -f "$VSO_YAML_PATH/" > /dev/null

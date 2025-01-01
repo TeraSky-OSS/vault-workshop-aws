@@ -15,6 +15,7 @@ caption "K8s Dynamic Secret"
 
 p "After installing Vault with Helm, a 'vault' service account and secret were already created."
 pe "cat $YAML_PATH/vault-sa.yaml"
+pe "kubectl apply -f $YAML_PATH/vault-sa.yaml"
 
 echo ""
 
@@ -67,8 +68,7 @@ echo ""
 p "Check the newly created service account in the default namespace."
 pe "kubectl -n default get serviceaccount"
 
-p "Done"
-p ""
+caption "K8s Dynamic Secret - Done"
 
 # Cleanup
 vault secrets disable kubernetes/ > /dev/null

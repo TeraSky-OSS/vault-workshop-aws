@@ -134,7 +134,7 @@ echo ""
 p "Create a role for the new root CA to issue certificates."
 pe "vault write pki/roles/2024-servers allow_any_name=true"
 
-p ""
+caption "PKI Secret Engine - Done"
 
 
 # Cleanup

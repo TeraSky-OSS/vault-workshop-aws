@@ -1,12 +1,11 @@
 demo_files:
-# - ldap.sh
-# - dynamic_secret_ldap.sh #
-- dynamic_secret_ssh.sh
+# - ldap.sh #$
+# - dynamic_secret_ssh.sh
 # - dynamic_secret_k8s.sh
 # - vault_secret_operator.sh
-# - sentinel_policies.sh #
+- sentinel_policies.sh #
 # - vault_monitoring.sh 
 # - vault_automaic_backups.sh 
 # - vault_agent_deployment.sh 
-# - pki.sh - $
+# - pki.sh #$
 # - adp.sh #

@@ -67,7 +67,7 @@ p "Access Grafana at http://127.0.0.1:8080/d/vaults/hashicorp-vault
 User Name: admin
 Password: password"
 
-echo ""
+caption "Setting Up Vault Monitoring - Done"
 
 # Cleanup
 vault audit disable file/ > /dev/null
