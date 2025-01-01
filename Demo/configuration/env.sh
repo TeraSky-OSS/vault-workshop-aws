@@ -1,3 +1,4 @@
+export CONF_PATH="./configuration"
 export CONFIG_FILE="./configuration/demo_config.yaml"
 export NAMESPACE="vault"
 export SERVICE_NAME="vault"
