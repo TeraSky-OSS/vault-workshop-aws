@@ -1,7 +1,7 @@
 demo_files:
 # - ldap.sh
 # - dynamic_secret_ldap.sh #
-# - dynamic_secret_ssh.sh #
+- dynamic_secret_ssh.sh
 # - dynamic_secret_k8s.sh
 # - vault_secret_operator.sh
 # - sentinel_policies.sh #
