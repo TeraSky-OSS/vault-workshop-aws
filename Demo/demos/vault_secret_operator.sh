@@ -111,9 +111,10 @@ wait_for_pod_by_label "name=secret-test"
 echo ""
 
 p "Inspect the secret from within the pod"
-pe "kubectl exec $DEMO_POD_VSO -- printenv | grep ENV_ ; echo"
+pe "kubectl exec -n defualt $DEMO_POD_VSO -- printenv | grep ENV_ ; echo"
 
 caption "Vault Secrets Operator - Done"
+echo ""
 
 # Cleanup
 kubectl delete --force -f "$VSO_YAML_PATH/" > /dev/null

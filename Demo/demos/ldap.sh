@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ########################
-# include the magic
+# Import magic
 ########################
 . ./configuration/demo-magic.sh
 . ./configuration/helper_functions.sh
@@ -35,7 +35,7 @@ p "vault write auth/ldap/config
     url="$LDAP_SERVER_IP"
     userdn="DC=dude,DC=com"
     groupdn="OU=Groups,DC=dude,DC=com"
-    groupfilter="\(\&\(objectClass=group\)\(member=\{\{\.UserDN\}\}\)\)"
+    groupfilter=\"(&(objectClass=group)(member={{.UserDN\}}))\"
     groupattr="cn"
     userattr="sAMAccountName"
     binddn="$CONNECT_USER"
@@ -47,9 +47,12 @@ vault write auth/ldap/config url="$LDAP_SERVER_IP" userdn="DC=dude,DC=com" group
 echo ""
 
 p "Testing LDAP Login with Vault"
-pe "vault login -method=ldap username=$TEST_USER password=$TEST_USER_PASSWORD"
+p "vault login -method=ldap username=$TEST_USER password=$TEST_USER_PASSWORD"
+vault login -method=ldap username=$TEST_USER password=$TEST_USER_PASSWORD 2> /dev/null
 
 p "LDAP Auth - Done"
+
+echo ""
 
 # --------------------
 vault login $TOKEN_VAULT > /dev/null
@@ -58,17 +61,19 @@ caption "LDAP Dynamic Secret Engine"
 echo ""
 
 
-p "For LDAP Dynamic Secret Engine, we will deploy openldap helm chart..."
 helm repo add helm-openldap https://jp-gouin.github.io/helm-openldap/ > /dev/null
-helm upgrade -i openldap helm-openldap/openldap-stack-ha -n openldap --create-namespace -f $PATH_YAML_LDAP/openldap-values.yaml
-OPENLDAP_ADMIN_PASSWORD=$(kubectl get secret openldap -o jsonpath="{.data.LDAP_ADMIN_PASSWORD}" | base64 --decode)
-wai
+helm upgrade -i ldap helm-openldap/openldap-stack-ha -n ldap --create-namespace -f $PATH_YAML_LDAP/ldap-values.yaml > /dev/null
+OPENLDAP_ADMIN_PASSWORD=$(kubectl get secret ldap -n ldap -o jsonpath="{.data.LDAP_ADMIN_PASSWORD}" | base64 --decode)
+kubectl wait --for=condition=ContainersReady -n ldap pod -l "app.kubernetes.io/component=ldap" --timeout 5m &>/dev/null
 
-p "Exposing Openldap Service..."
-nohup kubectl port-forward svc/openldap $OPENLDAP_PORT:389 -n openldap > /dev/null 2>&1 &
+sleep 5
 
-p "Connecting to LDAP server with root user"
-pe "ldapsearch -x -H $OPENLDAP_URL -b dc=example,dc=org -D "cn=admin,dc=example,dc=org" -w $OPENLDAP_ADMIN_PASSWORD"
+# Exposing LDAP
+( kubectl port-forward svc/ldap $OPENLDAP_PORT:389 -n ldap > /dev/null 2>&1 & )
+( kubectl port-forward svc/ldap-phpldapadmin 8080:80 -n ldap > /dev/null 2>&1 & )
+
+# p "Connecting to LDAP server with root user"
+# pe "ldapsearch -x -H $OPENLDAP_URL -b dc=example,dc=org -D "cn=admin,dc=example,dc=org" -w $OPENLDAP_ADMIN_PASSWORD"
 
 p "Enable LDAP Secrets Engine"
 pe "vault secrets enable ldap"
@@ -77,8 +82,8 @@ p "Configure LDAP Configuration"
 p "vault write ldap/config
   binddn="cn=admin,dc=example,dc=org"
   bindpass="Not@SecurePassw0rd"
-  url="ldap://openldap.openldap.svc.cluster.local" "
-vault write ldap/config binddn="cn=admin,dc=example,dc=org" bindpass="Not@SecurePassw0rd" url="ldap://openldap.openldap.svc.cluster.local"
+  url="ldap://ldap.ldap.svc.cluster.local" "
+vault write ldap/config binddn="cn=admin,dc=example,dc=org" bindpass="Not@SecurePassw0rd" url="ldap://ldap.ldap.svc.cluster.local"
 
 # p "Rotate the root password so only Vault knows the credentials:"
 # pe "vault write -f ldap/rotate-root"
@@ -116,33 +121,11 @@ pe "ldapsearch -x -H $OPENLDAP_URL -b dc=example,dc=org -D "cn=$USERNAME,ou=user
 
 caption "LDAP Dynamic Secret Engine - Done"
 
+echo ""
+
 # Cleanup
-helm uninstall openldap -n openldap > /dev/null
-kubectl delete pvc -n openldap --all > /dev/null
+helm uninstall ldap -n ldap > /dev/null
+kubectl delete pvc -n ldap --all > /dev/null
 vault auth disable ldap > /dev/null
 
 clear
-
-
-
-
-# # OPENLDAP:
-
-# helm repo add helm-openldap https://jp-gouin.github.io/helm-openldap/
-# helm upgrade -i openldap helm-openldap/openldap-stack-ha -n openldap --create-namespace -f $PATH_YAML_LDAP/openldap-values.yaml
-
-# vault secrets enable ldap
-
-# vault write ldap/config \
-#   binddn="cn=admin,dc=example,dc=org" \
-#   bindpass="Not@SecurePassw0rd" \
-#   url="ldap://openldap.openldap.svc.cluster.local"
-
-# vault write ldap/role/dynamic-role creation_ldif=@$PATH_YAML_LDAP/creation.ldif deletion_ldif=@$PATH_YAML_LDAP/deletion.ldif default_ttl=1h max_ttl=24h
-
-# vault read -format=json ldap/creds/dynamic-role
-
-# # ldapsearch -x -H ldap://127.0.0.1:3891 -D "cn=admin,dc=example,dc=org" -w "Not@SecurePassw0rd" -b "dc=example,dc=org" "(objectClass=*)" dn
-
-# ldapsearch -x -H ldap://127.0.0.1:3891 -b dc=example,dc=org -D "cn=admin,dc=example,dc=org" -w $(kubectl get secret openldap -o jsonpath="{.data.LDAP_ADMIN_PASSWORD}" | base64 --decode)
-

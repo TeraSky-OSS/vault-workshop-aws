@@ -62,13 +62,16 @@ wait_for_pod_by_label "app.kubernetes.io/name=grafana" "monitoring"
 echo ""
 
 p "Exposing Grafana Service"
-nohup kubectl --namespace monitoring port-forward svc/kube-prometheus-stack-grafana 8080:80 > /dev/null 2>&1 &
+( kubectl --namespace monitoring port-forward svc/kube-prometheus-stack-grafana 8080:80 > /dev/null 2>&1 & )
 
 p "Access Grafana at http://127.0.0.1:8080/d/vaults/hashicorp-vault
 User Name: admin
 Password: password"
 
+echo ""
+
 caption "Setting Up Vault Monitoring - Done"
+echo ""
 
 # Cleanup
 vault audit disable file/ > /dev/null

@@ -63,16 +63,30 @@ vault write kubernetes/roles/auto-managed-sa-and-role \
 echo ""
 
 p "Ask Vault to generate a dynamic service account and token with these permissions, limited to the 'default' namespace."
-pe "vault write kubernetes/creds/auto-managed-sa-and-role kubernetes_namespace=default"
+p "vault write kubernetes/creds/auto-managed-sa-and-role kubernetes_namespace=default -format=json"
+OUTPUT=$(vault write kubernetes/creds/auto-managed-sa-and-role kubernetes_namespace=default -format=json)
+echo $OUTPUT | jq
+SERVICEACCOUNT_NAME=$(echo $OUTPUT | jq -r '.data.service_account_name')
 
 echo ""
 
 p "Check the newly created service account in the default namespace."
 pe "kubectl -n default get serviceaccount"
 
+echo ""
+
+p "Running this should work since we gave the service account read permissions"
+pe "kubectl --namespace=default auth can-i list pods --as=system:serviceaccount:default:$SERVICEACCOUNT_NAME"
+
+p "This should not work."
+pe "kubectl --namespace=default auth can-i delete pods --as=system:serviceaccount:default:$SERVICEACCOUNT_NAME"
+
+
 caption "K8s Dynamic Secret - Done"
+echo ""
 
 # Cleanup
+vault login $TOKEN_VAULT > /dev/null
 vault secrets disable kubernetes/ > /dev/null
 kubectl delete -f $K8S_YAML_PATH/k8s-full-secrets-abilities-with-labels.yaml > /dev/null
 kubectl delete -f $K8S_YAML_PATH/vault-token-creator-binding.yaml > /dev/null

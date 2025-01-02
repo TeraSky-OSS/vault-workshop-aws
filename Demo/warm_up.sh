@@ -55,7 +55,7 @@ else
 fi
 
 p "Exposing Vault service..."
-nohup kubectl port-forward svc/$SERVICE_NAME $PORT:$PORT --namespace=$NAMESPACE > /dev/null 2>&1 &
+( kubectl port-forward svc/$SERVICE_NAME $PORT:$PORT --namespace=$NAMESPACE > /dev/null 2>&1 & )
 
 p "Logging into Vault..."
 vault login $TOKEN_VAULT

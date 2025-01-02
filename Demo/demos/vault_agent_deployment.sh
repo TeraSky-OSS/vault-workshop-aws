@@ -103,11 +103,14 @@ p "Verify the updated secret in the pod."
 pe "vault kv get secret/myapp"
 pe "kubectl exec $TEST_POD_NAME -n $TEST_POD_NAMESPACE -- cat /vault/secrets/myapp.txt"
 
+echo ""
+
 caption "Deploy Vault Agent - Done"
+echo ""
 
 # Cleanup
-kubectl delete --force $PATH_YAML_VAULT_AGENT/ > /dev/null
-kubectl delete serviceaccount myapp-sa > /dev/null
+kubectl delete -f $PATH_YAML_VAULT_AGENT/ > /dev/null
+kubectl delete serviceaccount myapp-sa -n $TEST_POD_NAMESPACE > /dev/null
 vault secrets disable secret > /dev/null
 vault auth disable kubernetes > /dev/null
 
