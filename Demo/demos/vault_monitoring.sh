@@ -55,6 +55,7 @@ pe "kubectl apply -f $MONITOING_YAML_PATH/grafana_dashboard_vault.yaml"
 echo ""
 
 p "Installing Kube Prometheus Stack via Helm"
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts > /dev/null 
 helm upgrade -i kube-prometheus-stack prometheus-community/kube-prometheus-stack -f ./configuration/yamls/monitoring/values.yaml -n monitoring
 wait_for_pod_by_label "app.kubernetes.io/name=grafana" "monitoring"
 

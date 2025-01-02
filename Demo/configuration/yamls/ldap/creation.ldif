@@ -1,23 +1,18 @@
-dn: CN={{.Username}},OU=test,DC=dude,DC=com
+dn: cn={{.Username}},ou=users,dc=example,dc=org
 changetype: add
-objectClass: top
-objectClass: person
-objectClass: organizationalPerson
-objectClass: user
-userPrincipalName: {{.Username}}@dude.com
-sAMAccountName: {{.Username}}
+cn: {{.Username}}
+sn: {{.Username}}
+uidNumber: 1001
+uid: 1001
+gidNumber: 1000
+homeDirectory: /home/{{.Username}}
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+userPassword: {{.Password }}
 
-dn: CN={{.Username}},OU=test,DC=dude,DC=com
-changetype: modify
-replace: unicodePwd
-unicodePwd::{{ printf "%q" .Password | utf16le | base64 }}
--
-replace: userAccountControl
-userAccountControl: 66048
--
-
-dn: CN=test-group,OU=test,DC=dude,DC=com
+dn: CN=readers,ou=users,dc=example,dc=org
 changetype: modify
 add: member
-member: CN={{.Username}},OU=test,DC=dude,DC=com
+member: CN={{.Username}},ou=users,dc=example,dc=org
 -

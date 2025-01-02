@@ -1,2 +1,2 @@
-dn: CN={{.Username}},OU=test,DC=dude,DC=com
+dn: CN={{.Username}},OU=users,DC=example,DC=org
 changetype: delete
