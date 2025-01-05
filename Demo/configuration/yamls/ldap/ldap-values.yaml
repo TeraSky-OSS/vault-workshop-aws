@@ -41,12 +41,24 @@ tls:
     secret: ""  # The name of a generic secret to use for custom CA certificate (ca.crt)
 
 env:
-  LDAP_ORGANISATION: "example"
-  LDAP_DOMAIN: "example.org"
-  LDAP_BACKEND: "hdb"
-  LDAP_TLS: "true"
+  LDAP_ENABLE_TLS: "no"
+  LDAP_REQUIRE_TLS: "false"
+  LDAPTLS_REQCERT: "never"
   LDAP_TLS_ENFORCE: "false"
   LDAP_READONLY_USER: "true"
+
+customLdifFiles:
+  0-initial-setup.ldif: |-
+    dn: dc=example,dc=org
+    objectClass: domain
+    dc: example
+
+    dn: cn=admin,dc=example,dc=org
+    objectClass: simpleSecurityObject
+    objectClass: organizationalRole
+    cn: admin
+    description: LDAP Admin
+    userPassword: Not@SecurePassw0rd
 
 
 ## ltb-passwd

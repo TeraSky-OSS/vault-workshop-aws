@@ -50,8 +50,8 @@ p "Testing LDAP Login with Vault"
 p "vault login -method=ldap username=$TEST_USER password=$TEST_USER_PASSWORD"
 vault login -method=ldap username=$TEST_USER password=$TEST_USER_PASSWORD 2> /dev/null
 
+echo ""
 p "LDAP Auth - Done"
-
 echo ""
 
 # --------------------
@@ -60,7 +60,7 @@ vault login $TOKEN_VAULT > /dev/null
 caption "LDAP Dynamic Secret Engine"
 echo ""
 
-
+p "Setting everything up..."
 helm repo add helm-openldap https://jp-gouin.github.io/helm-openldap/ > /dev/null
 helm upgrade -i ldap helm-openldap/openldap-stack-ha -n ldap --create-namespace -f $PATH_YAML_LDAP/ldap-values.yaml > /dev/null
 OPENLDAP_ADMIN_PASSWORD=$(kubectl get secret ldap -n ldap -o jsonpath="{.data.LDAP_ADMIN_PASSWORD}" | base64 --decode)
@@ -71,6 +71,11 @@ sleep 5
 # Exposing LDAP
 ( kubectl port-forward svc/ldap $OPENLDAP_PORT:389 -n ldap > /dev/null 2>&1 & )
 ( kubectl port-forward svc/ldap-phpldapadmin 8080:80 -n ldap > /dev/null 2>&1 & )
+
+sleep 3
+
+# Setup openldap
+ldapadd -x -H ldap://127.0.0.1:$OPENLDAP_PORT -D "cn=admin,dc=example,dc=org" -w "Not@SecurePassw0rd" -f $PATH_YAML_LDAP/setup.ldif #&>/dev/null
 
 # p "Connecting to LDAP server with root user"
 # pe "ldapsearch -x -H $OPENLDAP_URL -b dc=example,dc=org -D "cn=admin,dc=example,dc=org" -w $OPENLDAP_ADMIN_PASSWORD"
@@ -119,13 +124,15 @@ pe "vault lease revoke $LEASE_ID"
 p "Lets try again logining with the same dynamic credenitals and see that they are revoked."
 pe "ldapsearch -x -H $OPENLDAP_URL -b dc=example,dc=org -D "cn=$USERNAME,ou=users,dc=example,dc=org" -w $PASSWORD"
 
+echo ""
 caption "LDAP Dynamic Secret Engine - Done"
 
 echo ""
 
 # Cleanup
+vault auth disable ldap > /dev/null
+vault secrets disable ldap > /dev/null
 helm uninstall ldap -n ldap > /dev/null
 kubectl delete pvc -n ldap --all > /dev/null
-vault auth disable ldap > /dev/null
 
 clear
