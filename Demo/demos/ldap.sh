@@ -75,10 +75,13 @@ sleep 5
 sleep 3
 
 # Setup openldap
-ldapadd -x -H ldap://127.0.0.1:$OPENLDAP_PORT -D "cn=admin,dc=example,dc=org" -w "Not@SecurePassw0rd" -f $PATH_YAML_LDAP/setup.ldif #&>/dev/null
+kubectl create configmap ldap-setup --from-file=setup.ldif=$PATH_YAML_LDAP/setup.ldif 2> /dev/null
+kubectl apply -f $PATH_YAML_LDAP/ldap-client.yaml > /dev/null
+kubectl wait --for=condition=complete --timeout=600s job/ldap-add-job > /dev/null
+# ldapadd -x -H ldap://127.0.0.1:$OPENLDAP_PORT -D "cn=admin,dc=example,dc=org" -w "Not@SecurePassw0rd" -f $PATH_YAML_LDAP/setup.ldif &>/dev/null
 
 # p "Connecting to LDAP server with root user"
-# pe "ldapsearch -x -H $OPENLDAP_URL -b dc=example,dc=org -D "cn=admin,dc=example,dc=org" -w $OPENLDAP_ADMIN_PASSWORD"
+# pe "ldapsearch -x -H $OPENLDAP_URL -b dc=example,dc=org -D "cn=admin,dc=example,dc=org" -w Not@SecurePassw0rd"
 
 p "Enable LDAP Secrets Engine"
 pe "vault secrets enable ldap"
@@ -134,5 +137,7 @@ vault auth disable ldap > /dev/null
 vault secrets disable ldap > /dev/null
 helm uninstall ldap -n ldap > /dev/null
 kubectl delete pvc -n ldap --all > /dev/null
+kubectl delete configmap ldap-setup > /dev/null
+kubectl delete -f $PATH_YAML_LDAP/ldap-client.yaml > /dev/null
 
 clear

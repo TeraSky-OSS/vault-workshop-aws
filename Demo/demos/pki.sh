@@ -53,7 +53,7 @@ echo ""
 p "Set the URLs for issuing certificates and CRL distribution"
 pe "vault write pki/config/urls issuing_certificates="$VAULT_ADDR/v1/pki/ca" crl_distribution_points="$VAULT_ADDR/v1/pki/crl""
 
-p ""
+echo ""
 
 ########################
 # Step 2
@@ -81,9 +81,9 @@ pe "vault write -format=json pki/root/sign-intermediate issuer_ref='root-2024' c
 echo ""
 
 p "Import the signed intermediate certificate into Vault."
-pe "vault write pki_int/intermediate/set-signed certificate=@intermediate.cert.pem"
+pe "vault write pki_int/intermediate/set-signed certificate=@intermediate.cert.pem 2> /dev/null"
 
-p ""
+echo ""
 
 ########################
 # Step 3
@@ -94,7 +94,7 @@ p "Create a role to issue certs for example.com and subdomains."
 VAULT_ISSUER_REF=$(vault read -field=default pki_int/config/issuers)
 pe "vault write pki_int/roles/example-dot-com issuer_ref="$VAULT_ISSUER_REF" allowed_domains="example.com" allow_subdomains=true max_ttl="720h""
 
-p ""
+echo ""
 
 ########################
 # Step 4
@@ -104,7 +104,7 @@ echo ""
 p "Request a certificate for test.example.com."
 pe "vault write pki_int/issue/example-dot-com common_name='test.example.com' ttl='24h'"
 
-p ""
+echo ""
 
 ########################
 # Step 5
@@ -114,7 +114,7 @@ echo ""
 p "Clean up revoked and expired certificates."
 pe "vault write pki_int/tidy tidy_cert_store=true tidy_revoked_certs=true"
 
-p ""
+echo ""
 
 ########################
 # Step 6
@@ -134,6 +134,7 @@ echo ""
 p "Create a role for the new root CA to issue certificates."
 pe "vault write pki/roles/2024-servers allow_any_name=true"
 
+echo ""
 caption "PKI Secret Engine - Done"
 
 

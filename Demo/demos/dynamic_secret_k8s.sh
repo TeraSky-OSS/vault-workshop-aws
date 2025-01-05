@@ -17,7 +17,7 @@ caption "K8s Dynamic Secret"
 
 p "After installing Vault with Helm, a 'vault' service account and secret were already created."
 pe "cat $K8S_YAML_PATH/vault-sa.yaml"
-pe "kubectl apply -f $K8S_YAML_PATH/vault-sa.yaml"
+pe "kubectl apply -f $K8S_YAML_PATH/vault-sa.yaml 2> /dev/null"
 
 echo ""
 

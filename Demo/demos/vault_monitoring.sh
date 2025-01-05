@@ -16,8 +16,11 @@ MONITOING_YAML_PATH="$YAML_PATH/monitoring"
 caption "Setting Up Vault Monitoring"
 echo ""
 
+# Setup
+kubectl create ns monitoring >/dev/null 2>&1 
+
 p "Enabling Vault Auditing"
-vault audit enable file file_path="/vault/logs/audit.log"
+pe "vault audit enable file file_path="/vault/logs/audit.log" "
 
 echo ""
 
@@ -70,6 +73,10 @@ Password: password"
 
 echo ""
 
+p "Lets view vault audit information"
+pe "kubectl exec -n vault vault-0 -- tail -n 5 /vault/logs/audit.log | jq"
+
+echo ""
 caption "Setting Up Vault Monitoring - Done"
 echo ""
 
