@@ -81,7 +81,7 @@ pe "kubectl --namespace=default auth can-i list pods --as=system:serviceaccount:
 p "This should not work."
 pe "kubectl --namespace=default auth can-i delete pods --as=system:serviceaccount:default:$SERVICEACCOUNT_NAME"
 
-
+echo ""
 caption "K8s Dynamic Secret - Done"
 echo ""
 

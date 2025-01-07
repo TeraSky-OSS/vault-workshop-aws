@@ -75,7 +75,7 @@ sleep 5
 sleep 3
 
 # Setup openldap
-kubectl create configmap ldap-setup --from-file=setup.ldif=$PATH_YAML_LDAP/setup.ldif 2> /dev/null
+kubectl create configmap ldap-setup -n default --from-file=setup.ldif=$PATH_YAML_LDAP/setup.ldif > /dev/null 2>&1
 kubectl apply -f $PATH_YAML_LDAP/ldap-client.yaml > /dev/null
 kubectl wait --for=condition=complete --timeout=600s job/ldap-add-job > /dev/null
 # ldapadd -x -H ldap://127.0.0.1:$OPENLDAP_PORT -D "cn=admin,dc=example,dc=org" -w "Not@SecurePassw0rd" -f $PATH_YAML_LDAP/setup.ldif &>/dev/null
@@ -137,7 +137,7 @@ vault auth disable ldap > /dev/null
 vault secrets disable ldap > /dev/null
 helm uninstall ldap -n ldap > /dev/null
 kubectl delete pvc -n ldap --all > /dev/null
-kubectl delete configmap ldap-setup > /dev/null
+kubectl delete configmap ldap-setup -n default > /dev/null
 kubectl delete -f $PATH_YAML_LDAP/ldap-client.yaml > /dev/null
 
 clear
