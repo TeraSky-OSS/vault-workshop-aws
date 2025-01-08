@@ -40,7 +40,10 @@ sleep 3
 echo ""
 
 pe "kubectl exec $POD_NAME --namespace $NAMESPACE -- ls $BACKUP_PATH_IN_POD"
-p ""
+
+echo ""
+caption "Vault Automatic Backups - Done"
+echo ""
 
 # Cleanup
 vault delete sys/storage/raft/snapshot-auto/config/testsnap > /dev/null

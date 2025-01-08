@@ -1,0 +1,26 @@
+dn: dc=example,dc=org
+objectClass: domain
+dc: example
+
+dn: cn=admin,dc=example,dc=org
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: admin
+description: LDAP Admin
+userPassword: Not@SecurePassw0rd
+
+# Organizational Unit for Users
+dn: ou=users,dc=example,dc=org
+objectClass: organizationalUnit
+ou: users
+
+# Organizational Unit for Groups
+dn: ou=groups,dc=example,dc=org
+objectClass: organizationalUnit
+ou: groups
+
+# Readers Group
+dn: cn=readers,ou=groups,dc=example,dc=org
+objectClass: posixGroup
+cn: readers
+gidNumber: 1001

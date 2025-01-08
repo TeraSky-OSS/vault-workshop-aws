@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ldap-add-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: ldap-client
+        image: particlekit/ldap-client
+        command:
+        - bash
+        - -c
+        - |
+          ldapadd -x -H ldap://ldap.ldap.svc.cluster.local -D "cn=admin,dc=example,dc=org" -w "Not@SecurePassw0rd" -f /config/setup.ldif
+        volumeMounts:
+        - name: ldif-volume
+          mountPath: /config
+      restartPolicy: Never
+      volumes:
+      - name: ldif-volume
+        configMap:
+          name: ldap-setup  # Name of the ConfigMap
+          items:
+            - key: setup.ldif
+              path: setup.ldif  # The name of the file inside the container
+  backoffLimit: 4

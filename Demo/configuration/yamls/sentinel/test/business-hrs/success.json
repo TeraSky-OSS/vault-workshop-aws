@@ -1,0 +1,13 @@
+{
+  "mock": {
+     "time": {
+        "now": {
+        "weekday": 1,
+        "hour": 12
+        }
+     }
+  },
+  "test": {
+     "main": true
+  }
+}

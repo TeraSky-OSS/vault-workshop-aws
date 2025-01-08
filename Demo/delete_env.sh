@@ -5,8 +5,8 @@
 # Delete release
 helm uninstall $SERVICE_NAME -n $NAMESPACE
 
-# Delete Vault pv's,pvc's
+# Delete Vault pvc's
 kubectl delete pvc -n vault --all
-kubectl delete pv -n vault --all
+rm -f cluster-keys.json
 
 echo "Enviroment was deleted successfully"

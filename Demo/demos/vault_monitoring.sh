@@ -16,8 +16,11 @@ MONITOING_YAML_PATH="$YAML_PATH/monitoring"
 caption "Setting Up Vault Monitoring"
 echo ""
 
+# Setup
+kubectl create ns monitoring >/dev/null 2>&1 
+
 p "Enabling Vault Auditing"
-vault audit enable file file_path="/vault/logs/audit.log"
+pe "vault audit enable file file_path="/vault/logs/audit.log" "
 
 echo ""
 
@@ -55,18 +58,26 @@ pe "kubectl apply -f $MONITOING_YAML_PATH/grafana_dashboard_vault.yaml"
 echo ""
 
 p "Installing Kube Prometheus Stack via Helm"
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts > /dev/null 
 helm upgrade -i kube-prometheus-stack prometheus-community/kube-prometheus-stack -f ./configuration/yamls/monitoring/values.yaml -n monitoring
 wait_for_pod_by_label "app.kubernetes.io/name=grafana" "monitoring"
 
 echo ""
 
 p "Exposing Grafana Service"
-nohup kubectl --namespace monitoring port-forward svc/kube-prometheus-stack-grafana 8080:80 > /dev/null 2>&1 &
+( kubectl --namespace monitoring port-forward svc/kube-prometheus-stack-grafana 8080:80 > /dev/null 2>&1 & )
 
 p "Access Grafana at http://127.0.0.1:8080/d/vaults/hashicorp-vault
 User Name: admin
 Password: password"
 
+echo ""
+
+p "Lets view vault audit information"
+pe "kubectl exec -n vault vault-0 -- tail -n 5 /vault/logs/audit.log | jq"
+
+echo ""
+caption "Setting Up Vault Monitoring - Done"
 echo ""
 
 # Cleanup

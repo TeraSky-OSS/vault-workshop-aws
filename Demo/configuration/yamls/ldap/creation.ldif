@@ -1,0 +1,18 @@
+dn: cn={{.Username}},ou=users,dc=example,dc=org
+changetype: add
+cn: {{.Username}}
+sn: {{.Username}}
+uidNumber: 1001
+uid: 1001
+gidNumber: 1000
+homeDirectory: /home/{{.Username}}
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+userPassword: {{.Password }}
+
+dn: cn=readers,ou=groups,dc=example,dc=org
+changetype: modify
+add: memberUid
+memberUid: {{.Username}}
+-

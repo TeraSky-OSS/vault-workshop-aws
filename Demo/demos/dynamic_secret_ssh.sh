@@ -110,9 +110,9 @@ pe "ssh-keygen -Lf $HOME/.ssh/vault_rsa-cert.pub"
 echo ""
 
 p "SSH into the host machine using the signed key"
-pe "ssh -i ~/.ssh/vault_rsa $VAULT_SSH_TARGET \"echo 'Successfully connected to machine using Vault secret ssh engine!'\""
+pe "ssh -i ~/.ssh/vault_rsa $VAULT_SSH_TARGET "echo "$HOSTNAME Hello from Successfully connected to machine using Vault secret ssh engine!"""
 
-p ""
+caption "SSH Secret Engine in Vault - Done"
 
 # Cleanup
 rm -f $HOME/.ssh/vault_rsa $HOME/.ssh/vault_rsa.pub $HOME/.ssh/vault_rsa-cert.pub > /dev/null
