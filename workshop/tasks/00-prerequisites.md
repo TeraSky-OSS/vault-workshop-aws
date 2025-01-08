@@ -9,5 +9,4 @@ Before starting the Vault workshop, make sure you have the following prerequisit
 
 Make sure both Minikube and Vault CLI are installed and configured on your machine before proceeding.
 
-
-Next: [Setup Vault with Helm Chart](./01-setup-vault-helm-chart.md)
+Next: start performing the workshop [tasks](./tasks.md)
