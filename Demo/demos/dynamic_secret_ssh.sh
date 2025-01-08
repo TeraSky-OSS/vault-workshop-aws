@@ -114,14 +114,14 @@ pe "ssh -i ~/.ssh/vault_rsa $VAULT_SSH_TARGET "echo "$HOSTNAME Hello from Succes
 
 caption "SSH Secret Engine in Vault - Done"
 
-# Cleanup
-rm -f $HOME/.ssh/vault_rsa $HOME/.ssh/vault_rsa.pub $HOME/.ssh/vault_rsa-cert.pub > /dev/null
-vault secrets disable ssh-client-signer/ > /dev/null
-vault policy delete ssh_test > /dev/null
-rm -f $PATH_YAML_SSH/trusted-user-ca-keys.pem > /dev/null
-sudo sed -i '/TrustedUserCAKeys \/etc\/ssh\/trusted-user-ca-keys.pem/d' /etc/ssh/sshd_config > /dev/null
-sudo systemctl restart sshd.service > /dev/null
-export VAULT_ADDR="http://127.0.0.1:8200"
-vault login $TOKEN_VAULT
+# # Cleanup
+# rm -f $HOME/.ssh/vault_rsa $HOME/.ssh/vault_rsa.pub $HOME/.ssh/vault_rsa-cert.pub > /dev/null
+# vault secrets disable ssh-client-signer/ > /dev/null
+# vault policy delete ssh_test > /dev/null
+# rm -f $PATH_YAML_SSH/trusted-user-ca-keys.pem > /dev/null
+# sudo sed -i '/TrustedUserCAKeys \/etc\/ssh\/trusted-user-ca-keys.pem/d' /etc/ssh/sshd_config > /dev/null
+# sudo systemctl restart sshd.service > /dev/null
+# export VAULT_ADDR="http://127.0.0.1:8200"
+# vault login $TOKEN_VAULT
 
 clear

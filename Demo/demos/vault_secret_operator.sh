@@ -26,8 +26,9 @@ pe "vault kv get secret/vsodemo"
 echo ""
 
 p "Install Vault Secrets Operator with Helm."
-helm repo add hashicorp https://helm.releases.hashicorp.com > /dev/null
-pe "helm upgrade --install --create-namespace --namespace vault-secrets-operator vault-secrets-operator hashicorp/vault-secrets-operator"
+# helm repo add hashicorp https://helm.releases.hashicorp.com > /dev/null
+p "helm upgrade --install --create-namespace --namespace vault-secrets-operator vault-secrets-operator hashicorp/vault-secrets-operator"
+sleep 2
 
 wait_for_pod_by_label "app.kubernetes.io/name=vault-secrets-operator" "vault-secrets-operator"
 
@@ -117,10 +118,10 @@ caption "Vault Secrets Operator - Done"
 echo ""
 
 # Cleanup
-kubectl delete -f "$VSO_YAML_PATH/" > /dev/null
-helm uninstall -n vault-secrets-operator vault-secrets-operator > /dev/null
-vault secrets disable secret > /dev/null
-vault auth disable kubernetes > /dev/null
-vault policy delete app-read-policy > /dev/null
+# kubectl delete -f "$VSO_YAML_PATH/" > /dev/null
+# helm uninstall -n vault-secrets-operator vault-secrets-operator > /dev/null
+# vault secrets disable secret > /dev/null
+# vault auth disable kubernetes > /dev/null
+# vault policy delete app-read-policy > /dev/null
 
 clear

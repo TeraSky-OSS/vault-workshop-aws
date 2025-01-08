@@ -85,10 +85,10 @@ echo ""
 caption "K8s Dynamic Secret - Done"
 echo ""
 
-# Cleanup
-vault login $TOKEN_VAULT > /dev/null
-vault secrets disable kubernetes/ > /dev/null
-kubectl delete -f $K8S_YAML_PATH/k8s-full-secrets-abilities-with-labels.yaml > /dev/null
-kubectl delete -f $K8S_YAML_PATH/vault-token-creator-binding.yaml > /dev/null
+# # Cleanup
+# vault login $TOKEN_VAULT > /dev/null
+# vault secrets disable kubernetes/ > /dev/null
+# kubectl delete -f $K8S_YAML_PATH/k8s-full-secrets-abilities-with-labels.yaml > /dev/null
+# kubectl delete -f $K8S_YAML_PATH/vault-token-creator-binding.yaml > /dev/null
 
 clear

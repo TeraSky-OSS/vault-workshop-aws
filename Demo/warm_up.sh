@@ -60,7 +60,13 @@ p "Exposing Vault service..."
 p "Logging into Vault..."
 vault login $TOKEN_VAULT
 
+p "Preping the environment"
+cd ./configuration
+bash prep-addons.sh
+cd ..
+
 p "Done!"
+
 
 # Start workshop
 read -p "Do you want to start the workshop? (y/n): " response

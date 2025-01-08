@@ -57,10 +57,11 @@ pe "kubectl apply -f $MONITOING_YAML_PATH/grafana_dashboard_vault.yaml"
 
 echo ""
 
-p "Installing Kube Prometheus Stack via Helm"
+p "Installing Kube Prometheus Stack via Helm..."
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts > /dev/null 
 helm upgrade -i kube-prometheus-stack prometheus-community/kube-prometheus-stack -f ./configuration/yamls/monitoring/values.yaml -n monitoring
 wait_for_pod_by_label "app.kubernetes.io/name=grafana" "monitoring"
+wait_for_pod_by_label "app.kubernetes.io/instance=kube-prometheus-stack-prometheus" "monitoring"
 
 echo ""
 
@@ -81,13 +82,13 @@ caption "Setting Up Vault Monitoring - Done"
 echo ""
 
 # Cleanup
-vault audit disable file/ > /dev/null
-vault token lookup $(cat $MONITOING_YAML_PATH/prometheus-token) > /dev/null
-vault policy delete prometheus-metrics > /dev/null
-kubectl delete -n monitoring -f $MONITOING_YAML_PATH/grafana_dashboard_vault.yaml > /dev/null
-kubectl delete secret -n monitoring prometheus-token > /dev/null
-helm uninstall kube-prometheus-stack -n monitoring > /dev/null
-rm -fr $MONITOING_YAML_PATH/prometheus-token > /dev/null
+# vault audit disable file/ > /dev/null
+# vault token lookup $(cat $MONITOING_YAML_PATH/prometheus-token) > /dev/null
+# vault policy delete prometheus-metrics > /dev/null
+# kubectl delete -n monitoring -f $MONITOING_YAML_PATH/grafana_dashboard_vault.yaml > /dev/null
+# kubectl delete secret -n monitoring prometheus-token > /dev/null
+# helm uninstall kube-prometheus-stack -n monitoring > /dev/null
+# rm -fr $MONITOING_YAML_PATH/prometheus-token > /dev/null
 
 
 clear

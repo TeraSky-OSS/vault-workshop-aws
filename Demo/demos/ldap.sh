@@ -60,24 +60,24 @@ vault login $TOKEN_VAULT > /dev/null
 caption "LDAP Dynamic Secret Engine"
 echo ""
 
-p "Setting everything up..."
-helm repo add helm-openldap https://jp-gouin.github.io/helm-openldap/ > /dev/null
-helm upgrade -i ldap helm-openldap/openldap-stack-ha -n ldap --create-namespace -f $PATH_YAML_LDAP/ldap-values.yaml > /dev/null
-OPENLDAP_ADMIN_PASSWORD=$(kubectl get secret ldap -n ldap -o jsonpath="{.data.LDAP_ADMIN_PASSWORD}" | base64 --decode)
-kubectl wait --for=condition=ContainersReady -n ldap pod -l "app.kubernetes.io/component=ldap" --timeout 5m &>/dev/null
+# p "Setting everything up..."
+# helm repo add helm-openldap https://jp-gouin.github.io/helm-openldap/ > /dev/null
+# helm upgrade -i ldap helm-openldap/openldap-stack-ha -n ldap --create-namespace -f $PATH_YAML_LDAP/ldap-values.yaml > /dev/null
+# #OPENLDAP_ADMIN_PASSWORD=$(kubectl get secret ldap -n ldap -o jsonpath="{.data.LDAP_ADMIN_PASSWORD}" | base64 --decode)
+# kubectl wait --for=condition=ContainersReady -n ldap pod -l "app.kubernetes.io/component=ldap" --timeout 5m &>/dev/null
 
-sleep 5
+# sleep 5
 
-# Exposing LDAP
-( kubectl port-forward svc/ldap $OPENLDAP_PORT:389 -n ldap > /dev/null 2>&1 & )
-( kubectl port-forward svc/ldap-phpldapadmin 8080:80 -n ldap > /dev/null 2>&1 & )
+# # Exposing LDAP
+# ( kubectl port-forward svc/ldap $OPENLDAP_PORT:389 -n ldap > /dev/null 2>&1 & )
+# ( kubectl port-forward svc/ldap-phpldapadmin 8080:80 -n ldap > /dev/null 2>&1 & )
 
-sleep 3
+# sleep 3
 
-# Setup openldap
-kubectl create configmap ldap-setup -n default --from-file=setup.ldif=$PATH_YAML_LDAP/setup.ldif > /dev/null 2>&1
-kubectl apply -f $PATH_YAML_LDAP/ldap-client.yaml > /dev/null
-kubectl wait --for=condition=complete --timeout=600s job/ldap-add-job > /dev/null
+# # Setup openldap
+# kubectl create configmap ldap-setup -n default --from-file=setup.ldif=$PATH_YAML_LDAP/setup.ldif > /dev/null 2>&1
+# kubectl apply -f $PATH_YAML_LDAP/ldap-client.yaml > /dev/null
+# kubectl wait --for=condition=complete --timeout=600s job/ldap-add-job > /dev/null
 # ldapadd -x -H ldap://127.0.0.1:$OPENLDAP_PORT -D "cn=admin,dc=example,dc=org" -w "Not@SecurePassw0rd" -f $PATH_YAML_LDAP/setup.ldif &>/dev/null
 
 # p "Connecting to LDAP server with root user"
@@ -133,11 +133,11 @@ caption "LDAP Dynamic Secret Engine - Done"
 echo ""
 
 # Cleanup
-vault auth disable ldap > /dev/null
-vault secrets disable ldap > /dev/null
-helm uninstall ldap -n ldap > /dev/null
-kubectl delete pvc -n ldap --all > /dev/null
-kubectl delete configmap ldap-setup -n default > /dev/null
-kubectl delete -f $PATH_YAML_LDAP/ldap-client.yaml > /dev/null
+# vault auth disable ldap > /dev/null
+# vault secrets disable ldap > /dev/null
+# helm uninstall ldap -n ldap > /dev/null
+# kubectl delete pvc -n ldap --all > /dev/null
+# kubectl delete configmap ldap-setup -n default > /dev/null
+# kubectl delete -f $PATH_YAML_LDAP/ldap-client.yaml > /dev/null
 
 clear

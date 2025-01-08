@@ -27,6 +27,12 @@ for FILE in $demo_files; do
     if [[ -f "$DEMO_FILES_PATH/$FILE" ]]; then
         clear
         bash "$DEMO_FILES_PATH/$FILE"
+
+        # Run cleanup
+        cd ./configuration
+        bash ./cleanup.sh "$(basename "$FILE" .sh)" > /dev/null
+        cd ..
+
     else
         echo "Demo file $FILE not found."
     fi

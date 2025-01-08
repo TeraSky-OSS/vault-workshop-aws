@@ -16,10 +16,10 @@ PATH_YAML_SETNITNEL="$YAML_PATH/sentinel"
 caption "Setting Up Sentinel"
 echo ""
 
-p "Downloading and installing Sentinel..."
-wget -q https://releases.hashicorp.com/sentinel/0.16.1/sentinel_0.16.1_linux_amd64.zip
-sudo unzip -o sentinel_0.16.1_linux_amd64.zip -d /usr/local/bin > /dev/null
-rm -f sentinel_0.16.1_linux_amd64.zip > /dev/null
+# p "Downloading and installing Sentinel..."
+# wget -q https://releases.hashicorp.com/sentinel/0.16.1/sentinel_0.16.1_linux_amd64.zip
+# sudo unzip -o sentinel_0.16.1_linux_amd64.zip -d /usr/local/bin > /dev/null
+# rm -f sentinel_0.16.1_linux_amd64.zip > /dev/null
 
 echo ""
 
@@ -149,17 +149,18 @@ echo ""
 
 p "The 'business-hrs' policy will reject requests outside business hours."
 
+vault token revoke $TEST_TOKEN > /dev/null
+
 caption "Setting Up Sentinel - Done"
 
 # Cleanup
-vault token revoke $TEST_TOKEN > /dev/null
-vault secrets disable kv-v2 > /dev/null
-vault policy delete cidr-check > /dev/null
-vault policy delete business-hrs > /dev/null
-vault policy delete tester > /dev/null
-vault delete sys/policies/egp/business-hrs > /dev/null
-vault delete sys/policies/egp/cidr-check > /dev/null
-rm -f sentinel_0.16.1_linux_amd64.zip > /dev/null
-sudo rm -f /usr/local/bin/sentinel > /dev/null
+# vault secrets disable kv-v2 > /dev/null
+# vault policy delete cidr-check > /dev/null
+# vault policy delete business-hrs > /dev/null
+# vault policy delete tester > /dev/null
+# vault delete sys/policies/egp/business-hrs > /dev/null
+# vault delete sys/policies/egp/cidr-check > /dev/null
+# rm -f sentinel_0.16.1_linux_amd64.zip > /dev/null
+# sudo rm -f /usr/local/bin/sentinel > /dev/null
 
 clear

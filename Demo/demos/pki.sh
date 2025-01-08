@@ -139,10 +139,10 @@ caption "PKI Secret Engine - Done"
 
 
 # Cleanup
-rm -f root_2024_ca.crt intermediate.cert.pem pki_intermediate.csr > /dev/null
-vault delete pki/roles/2024-servers > /dev/null
-vault delete pki_int/roles/example-dot-com > /dev/null
-vault secrets disable pki > /dev/null
-vault secrets disable pki_int > /dev/null
+# rm -f root_2024_ca.crt intermediate.cert.pem pki_intermediate.csr > /dev/null
+# vault delete pki/roles/2024-servers > /dev/null
+# vault delete pki_int/roles/example-dot-com > /dev/null
+# vault secrets disable pki > /dev/null
+# vault secrets disable pki_int > /dev/null
 
 clear

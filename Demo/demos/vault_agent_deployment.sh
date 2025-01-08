@@ -86,7 +86,7 @@ p "Deploy the application pod to later inject secrets into it."
 pe "cat "$PATH_YAML_VAULT_AGENT/myapp_pod.yaml""
 pe "kubectl apply -f "$PATH_YAML_VAULT_AGENT/myapp_pod.yaml""
 wait_for_pod_by_label "app=vault-agent-injector-test"
-pe "kubectl get pods -n $TEST_POD_NAMESPACE"
+pe "kubectl get pods myapp -n $TEST_POD_NAMESPACE"
 
 echo ""
 p "Read the secret from the pod."
@@ -109,9 +109,9 @@ caption "Deploy Vault Agent - Done"
 echo ""
 
 # Cleanup
-kubectl delete -f $PATH_YAML_VAULT_AGENT/ > /dev/null
-kubectl delete serviceaccount myapp-sa -n $TEST_POD_NAMESPACE > /dev/null
-vault secrets disable secret > /dev/null
-vault auth disable kubernetes > /dev/null
+# kubectl delete -f $PATH_YAML_VAULT_AGENT/ > /dev/null
+# kubectl delete serviceaccount myapp-sa -n $TEST_POD_NAMESPACE > /dev/null
+# vault secrets disable secret > /dev/null
+# vault auth disable kubernetes > /dev/null
 
 clear
