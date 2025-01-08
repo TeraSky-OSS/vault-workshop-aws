@@ -47,7 +47,7 @@ Delete the secret.
 vault kv delete kv-v1/my-secret
 ```
 
-#### 5. **Verify KV secret deletation**
+#### 5. **Verify KV secret deletion**
 Verify that there is no secret.
 
 ```bash
