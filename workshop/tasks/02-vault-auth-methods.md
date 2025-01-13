@@ -92,9 +92,9 @@ EOF
    
    ```bash
    vault write auth/kubernetes/config \
-     kubernetes_host=$KUBE_HOST \
-     kubernetes_ca_cert=$KUBE_CA_CERT \
-     token_reviewer_jwt=$TOKEN_REVIEW_JWT
+     kubernetes_host="$KUBE_HOST" \
+     kubernetes_ca_cert="$KUBE_CA_CERT" \
+     token_reviewer_jwt="$TOKEN_REVIEW_JWT"
    ```
 
 
