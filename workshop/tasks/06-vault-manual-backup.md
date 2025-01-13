@@ -48,7 +48,7 @@ In this section, we will create a manual snapshot of the Vault data, simulate a 
    kubectl delete pod -n vault vault-0
    ```
 
-   > **Note**: Vault is now not initilaized and practicly is a new vault cluster we will need to reinitialize it and unseal it and the restore the data.
+   > **Note**: Vault is now not initialized and practically is a new vault cluster we will need to reinitialize it and unseal it and the restore the data.
 
 2. **Restore the snapshot**:
    Use the snapshot file created earlier to restore the Vault data.
