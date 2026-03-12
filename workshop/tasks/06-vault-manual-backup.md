@@ -23,12 +23,27 @@ In this section, we will create a manual snapshot of the Vault data, simulate a 
 ### **Step 2: Simulate Data Loss**
 
 1. **Delete Vault data**:
-   Delete secret engines.
    ```bash
-   vault secrets list
-   vault secrets disable kv-v1
-   vault secrets disable kv2
-   vault secrets list
+   # Scale down vault
+   kubectl scale statefulset vault -n vault --replicas=0
+   
+   # Wait for pod to terminate
+   kubectl get pod -n vault -w
+   
+   # Now delete the data via a temp pod using the same PVC
+   kubectl run vault-cleanup --rm -it --restart=Never \
+     --namespace=vault \
+     --image=busybox \
+     --overrides='{"spec":{"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"data-vault-0"}}],"containers":[{"name":"vault-cleanup","image":"busybox","command":["sh"],"stdin":true,"tty":true,"volumeMounts":[{"name":"data","mountPath":"/vault/data"}]}]}}' \
+     -- sh
+   
+   # Inside the pod:
+   rm -rf /vault/data/*
+   exit
+   
+   # Scale vault back up
+   kubectl scale statefulset vault -n vault --replicas=1
+   kubectl get pod -n vault
    ```
 
 2. **Restart the Vault pod**:
