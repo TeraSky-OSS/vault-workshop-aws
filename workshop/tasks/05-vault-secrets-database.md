@@ -26,11 +26,12 @@ In this section, we will configure the **Database Secret Engine** in Vault to dy
 
    ```bash
    export POSTGRES_PASSWORD=$(kubectl get secret --namespace postgres postgres-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d)
-
-   kubectl run postgres-postgresql-client --rm --tty -i --restart='Never' --namespace postgres \
-   --image docker.io/bitnami/postgresql:17.2.0-debian-12-r5 --env="PGPASSWORD=$POSTGRES_PASSWORD" \
-      --command -- psql --host postgres-postgresql -U postgres -d mydb -p 5432
    
+   kubectl run postgres-client --rm --tty -i --restart='Never' \
+     --namespace postgres \
+     --image postgres:17 \
+     --env="PGPASSWORD=$POSTGRES_PASSWORD" \
+     --command -- psql --host postgres-postgresql -U postgres -d mydb -p 5432
    ```
 
 ---
