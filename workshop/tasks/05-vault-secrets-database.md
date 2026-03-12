@@ -99,9 +99,11 @@ In this section, we will configure the **Database Secret Engine** in Vault to dy
 
    Now login with the new dynamic credentials
    ```bash
-   kubectl run postgres-postgresql-client --rm --tty -i --restart='Never' --namespace postgres \
-   --image docker.io/bitnami/postgresql:17.2.0-debian-12-r5 --env="PGPASSWORD=<new_password>" \
-      --command -- psql --host postgres-postgresql -U <new_user> -d mydb -p 5432
+   kubectl run postgres-postgresql-client --rm --tty -i --restart='Never' \
+   --namespace postgres \
+   --image postgres:17 \
+   --env="PGPASSWORD=<new_password>" \
+   --command -- psql --host postgres-postgresql -U postgres -d mydb -p 5432
    ```
 
    You can run this query to list data with the newly created user provisioned by vault.
