@@ -42,26 +42,32 @@ Before we create policies, let's enable the KV v2 secrets engine and store some 
 
 1. **Define a policy for read-only access to a KV v2 secret engine**:
    Create a file named `readonly-policy.hcl` with the following content:
-   ```hcl
+   ```
+   cat > readonly-policy.hcl <<EOF
    path "secret/data/*" {
      capabilities = ["read", "list"]
    }
+   EOF
    ```
 
 2. **Define a policy for read-write access to a KV v2 secret engine**:
    Create a file named `readwrite-policy.hcl` with the following content:
-   ```hcl
+   ```
+   cat > readwrite-policy.hcl <<EOF
    path "secret/data/*" {
      capabilities = ["create", "read", "update", "delete", "list"]
    }
+   EOF
    ```
 
 3. **Define a policy for admin access**:
    Create a file named `admin-policy.hcl` with the following content:
-   ```hcl
+   ```
+   cat > admin-policy.hcl <<EOF
    path "*" {
      capabilities = ["create", "read", "update", "delete", "list", "sudo"]
    }
+   EOF
    ```
 
 4. **Write the policies to Vault**:
