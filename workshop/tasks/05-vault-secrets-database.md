@@ -103,7 +103,7 @@ In this section, we will configure the **Database Secret Engine** in Vault to dy
    --namespace postgres \
    --image postgres:17 \
    --env="PGPASSWORD=<new_password>" \
-   --command -- psql --host postgres-postgresql -U postgres -d mydb -p 5432
+   --command -- psql --host postgres-postgresql -U <new_username> -d mydb -p 5432
    ```
 
    You can run this query to list data with the newly created user provisioned by vault.
