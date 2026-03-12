@@ -13,7 +13,15 @@ In this section, we will configure the **Database Secret Engine** in Vault to dy
    ```bash
    helm repo add bitnami https://charts.bitnami.com/bitnami
    helm repo update
-   helm upgrade --install postgres bitnami/postgresql --namespace postgres --set global.postgresql.auth.postgresPassword=password123,global.postgresql.auth.database=mydb --create-namespace
+   
+   helm upgrade --install postgres bitnami/postgresql \
+   --namespace postgres \
+   --set global.postgresql.auth.postgresPassword=password123 \
+   --set global.postgresql.auth.database=mydb \
+   --create-namespace
+   
+   # Wait for pod to be ready
+   kubectl get pod -n postgres -w
    ```
 
 2. **Verify the PostgreSQL deployment**:
