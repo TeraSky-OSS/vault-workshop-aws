@@ -23,9 +23,12 @@ In this section, we will create a manual snapshot of the Vault data, simulate a 
 ### **Step 2: Simulate Data Loss**
 
 1. **Delete Vault data**:
-   Delete raft directory to simulate data loss.
+   Delete secret engines.
    ```bash
-   kubectl exec -it vault-0 -- rm -fr /vault/data
+   vault secrets list
+   vault secrets disable kv-v1
+   vault secrets disable kv2
+   vault secrets list
    ```
 
 2. **Restart the Vault pod**:
