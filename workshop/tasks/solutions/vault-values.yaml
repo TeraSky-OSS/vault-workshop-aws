@@ -1,0 +1,78 @@
+global:
+  enabled: true
+  tlsDisable: false
+
+injector:
+  enabled: true
+
+server:
+   enabled: true
+
+   image:
+    repository: "hashicorp/vault"
+    tag: "1.21.1"
+   readinessProbe:
+      enabled: true
+      path: "/v1/sys/health?standbyok=true&sealedcode=204&uninitcode=204"
+   livenessProbe:
+      enabled: true
+      path: "/v1/sys/health?standbyok=true"
+      initialDelaySeconds: 60
+
+   auditStorage:
+      enabled: true
+
+   extraEnvironmentVars:
+      VAULT_CACERT: /vault/userconfig/vault-ha-tls/vault.ca
+      VAULT_TLSCERT: /vault/userconfig/vault-ha-tls/vault.crt
+      VAULT_TLSKEY: /vault/userconfig/vault-ha-tls/vault.key
+   
+   volumes:
+      - name: userconfig-vault-ha-tls
+        secret:
+         defaultMode: 420
+         secretName: vault-ha-tls
+   
+   volumeMounts:
+      - mountPath: /vault/userconfig/vault-ha-tls
+        name: userconfig-vault-ha-tls
+        readOnly: true
+
+   ha:
+      enabled: true
+      replicas: 1
+      raft: 
+         enabled: true
+         setNodeId: true
+         config: |
+            cluster_name = "vault-integrated-storage"
+            disable_mlock = true
+
+            storage "raft" {
+               path    = "/vault/data/"
+            }
+
+            listener "tcp" {
+               tls_disable = 0
+               address = "[::]:8200"
+               cluster_address = "[::]:8201"
+               
+               tls_cert_file = "/vault/userconfig/vault-ha-tls/vault.crt"
+               tls_key_file  = "/vault/userconfig/vault-ha-tls/vault.key"
+               tls_client_ca_file = "/vault/userconfig/vault-ha-tls/vault.ca"
+
+               # Enable unauthenticated metrics access (necessary for Prometheus Operator)
+               telemetry {
+               unauthenticated_metrics_access = "true"
+               }
+            }
+            
+            service_registration "kubernetes" {}
+
+            ui = true
+
+            # Configuration for enabling Prometheus metrics in your config.
+            telemetry {
+               prometheus_retention_time = "30s"
+               disable_hostname = true
+            }

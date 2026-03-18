@@ -18,13 +18,13 @@ helm repo update
 To customize the Helm chart for your Vault deployment, you'll need to retrieve the default values for Vault's Helm chart. For Vault version 1.16, run the following command:
 
 ```bash
-helm show values hashicorp/vault --version 0.28.0 > values.yaml
+helm show values hashicorp/vault --version 0.32.0 > values.yaml
 ```
 
 > **Note**: The default values were saved to a file named `values.yaml`. You should now modify the `values.yaml` file (for [example](../../Docs/vault-values.yaml)).
 
 The Vault cluster should have the following configurations:
-* Standalone Vault: Configure Vault to run as a standalone instance, without HA.
+* Standalone Vault: Configure Vault to run with 1 replica.
 * Raft Storage Backend: Enable the Raft storage backend.
 * Configure Vault to use TLS for secure communication. You will need to provide your own certificates or enable auto-generation of certificates (use the example [here](https://developer.hashicorp.com/vault/tutorials/kubernetes/kubernetes-minikube-tls#install-the-vault-helm-chart)).
 * Enable the Vault web UI for easier management and configuration.
@@ -37,7 +37,7 @@ The Vault cluster should have the following configurations:
 Run the following command to install Vault in the `vault` namespace with you `vault-values.yaml` file:
 
 ```bash
-helm upgrade -i vault hashicorp/vault --version 0.28.0 -f vault-values.yaml --namespace vault --create-namespace
+helm upgrade -i vault hashicorp/vault --version 0.32.0 -f vault-values.yaml --namespace vault --create-namespace
 ```
 
 ### 4. **Initialize Vault**

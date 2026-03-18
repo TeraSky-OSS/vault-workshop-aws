@@ -1,1 +1,7 @@
 Demo/cluster-keys.json
+
+# Local TLS/private key artifacts
+*.pem
+*.key
+*.crt
+vault-ws.pem

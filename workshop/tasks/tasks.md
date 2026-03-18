@@ -7,7 +7,7 @@
   - [6. Vault Manual backup](#6-vault-manual-backup)
 # Workshop tasks
 ## 1. Vault Setup with Helm Chart
-   - download and configure the values in the helm chart as following:
+   - Download the vault official helm chart and configure the values in the helm chart as following:
       * Standalone Vault: Configure Vault to run as a standalone instance, without HA.
       * Raft Storage Backend: Enable the Raft storage backend.
       * Configure Vault to use TLS for secure communication. You will need to provide your own certificates or enable auto-generation of certificates (use the example [here](https://developer.hashicorp.com/vault/tutorials/kubernetes/kubernetes-minikube-tls#install-the-vault-helm-chart)).
@@ -18,7 +18,7 @@
    - Unseal the vault
    - Check Vault status
    - login to vault
-   - The detailed solution is [here](./01-setup-vault-helm-chart.md)
+   - The detailed solution is [here](./solutions/01-setup-vault-helm-chart.md)
 ## 2. Vault Auth Methods
    - Enable the AppRole authentication method
      - Create an AppRole
@@ -29,7 +29,7 @@
      - Configure the Kubernetes authentication method
      - Create a Kubernetes role
      - Login with Kubernetes
-   - Detailed solution is [here](./02-vault-auth-methods.md)
+   - Detailed solution is [here](./solutions/02-vault-auth-methods.md)
 ## 3. Vault KV Secret Engine
    - Enable KV Version 1
      - Write Secrets to KV Version 1
@@ -45,7 +45,7 @@
      - Delete Secrets from KV Version 2
      - Recover a deleted version of the secret
      - Permanently Destroy Secrets
-   - Detailed solution is [here](./03-vault-secrets-kv.md)
+   - Detailed solution is [here](./solutions/03-vault-secrets-kv.md)
 ## 4. Vault Policies
    - Enable the KV v2 secrets engine (if you have'nt done already)
    - Store some secrets in the KV v2 engine
@@ -67,7 +67,7 @@
      - Policy Enforcement
        - List policies assigned to a token
        - Test access to restricted paths
- - Detailed solution is [here](./04-vault-policies.md)
+ - Detailed solution is [here](./solutions/04-vault-policies.md)
 ## 5. Vault Database Secret Engine
   - Deploy PostgreSQL using Helm
         ```sh
@@ -121,7 +121,7 @@
         use admin
         db.createCollection("testCollection")
         ```
-  - Detailed solution is [here](./05-vault-secrets-database.md)
+  - Detailed solution is [here](./solutions/05-vault-secrets-database.md)
 ## 6. Vault Manual backup
   - Create a raft snapshot
   - Verify the vault snapshot file is created
@@ -133,6 +133,6 @@
   - Recreate the storage for Vault. You can use the same YAML configuration used during the initial setup or let the Helm chart manage it
   - Restore the snapshot
   - Verify the restoration
-  - Detailed solution is [here](./06-vault-manual-backup.md)
+  - Detailed solution is [here](./solutions/06-vault-manual-backup.md)
   - cleanup the deployments by uninstalling all charts and deleting all volumes
     - detailed [here](./cleanup.md)
