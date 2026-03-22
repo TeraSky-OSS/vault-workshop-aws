@@ -45,7 +45,7 @@ helm upgrade -i vault hashicorp/vault --version 0.32.0 -f vault-values.yaml --na
 Once Vault is deployed, you need to initialize it. This step is required to set up the Vault server with the initial keys and unseal it.
 
 ```bash
-kubectl exec -it vault-0 -- vault status
+kubectl exec -n vault -it vault-0 -- vault status
 ```
 > **Note**: As you can see Vault is not yet initialize and is sealed
 
@@ -53,7 +53,7 @@ kubectl exec -it vault-0 -- vault status
 Run the following command to initialize Vault:
 
 ```bash
-kubectl exec vault-0 -- vault operator init \
+kubectl exec -n vault vault-0 -- vault operator init \
     -key-shares=1 \
     -key-threshold=1 \
     -format=json > cluster-keys.json
@@ -67,7 +67,7 @@ This command will output the unseal keys and the root token into a file named `c
 After Initializing:
 
 ```bash
-kubectl exec -it vault-0 -- vault status
+kubectl exec -n vault -it vault-0 -- vault status
 ```
 > **Note**: Now Vault is initialized, but still needs to be unsealed
 
@@ -78,7 +78,7 @@ After initialization, Vault is in a sealed state. To unseal it, you need to use 
 
 ```bash
 VAULT_UNSEAL_KEY=$(jq -r ".unseal_keys_b64[]" cluster-keys.json)
-kubectl exec -it vault-0 -- vault operator unseal $VAULT_UNSEAL_KEY
+kubectl exec -n vault -it vault-0 -- vault operator unseal $VAULT_UNSEAL_KEY
 ```
 
 ### 6. **Set Vault Address**
