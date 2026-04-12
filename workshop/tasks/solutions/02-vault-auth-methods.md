@@ -22,25 +22,35 @@ Each method will be configured with specific tasks, followed by instructions on 
 3. **Retrieve the Role ID**:
    The Role ID is used by applications to authenticate.
    ```bash
-   vault read auth/approle/role/my-role/role-id
+   ROLE_ID=$(vault read -field=role_id auth/approle/role/my-role/role-id)
    ```
 
 4. **Create a Secret ID**:
    The Secret ID is used along with the Role ID to authenticate.
    ```bash
-   vault write -f auth/approle/role/my-role/secret-id
+   SECRET_ID=$(vault write -f -field=secret_id auth/approle/role/my-role/secret-id)
    ```
 
 5. **Login with AppRole**:
    Use the Role ID and Secret ID to authenticate.
    ```bash
-   vault write auth/approle/login role_id="<role-id>" secret_id="<secret-id>"
+   vault write auth/approle/login role_id="$ROLE_ID" secret_id="$SECRET_ID"
    ```
    
    - After successful authentication, Vault will return a client token.
 
 #### Logging in with AppRole:
-Once logged in, you can access Vault resources with the token provided.
+With `ROLE_ID` and `SECRET_ID` set `VAULT_TOKEN` from the login response so the CLI uses this AppRole. Either copy the `token` value from step 5, or capture it in one step:
+
+```bash
+export VAULT_TOKEN=$(vault write -field=token auth/approle/login role_id="$ROLE_ID" secret_id="$SECRET_ID")
+```
+
+Example: verify the token and see its TTL and policies:
+
+```bash
+vault token lookup
+```
 
 ---
 
