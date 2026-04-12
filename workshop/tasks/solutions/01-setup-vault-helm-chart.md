@@ -2,6 +2,8 @@
 
 In this section, we will walk through the steps to deploy HashiCorp Vault on a Kubernetes cluster using Helm. This setup will allow you to manage secrets and other sensitive data securely in your Kubernetes environment.
 
+> **Note**: If you used hashicorp tutorial you can jump to [here](#6.-**Set-Vault-Address**)
+
 ## Steps for Setting Up Vault with Helm Chart
 
 ### 1. **Add HashiCorp Helm Repository**
@@ -89,7 +91,7 @@ Run the following command in your terminal to export the Vault address:
 
 In another terminal start port forwarding
 ```bash
-kubectl port-forward svc/vault 8200:8200
+kubectl port-forward svc/vault 8200:8200 -n vault &
 ```
 
 ```bash
