@@ -2,7 +2,7 @@
 
 In this section, we will walk through the steps to deploy HashiCorp Vault on a Kubernetes cluster using Helm. This setup will allow you to manage secrets and other sensitive data securely in your Kubernetes environment.
 
-> **Note**: If you used the HashiCorp tutorial, you can jump to [6. Set Vault Address](#6-set-vault-address)
+> **Note**: If you used the HashiCorp tutorial [here](https://developer.hashicorp.com/vault/tutorials/kubernetes/kubernetes-minikube-tls#install-the-vault-helm-chart), you can jump to [6. Set Vault Address](#6-set-vault-address)
 
 ## Steps for Setting Up Vault with Helm Chart
 
@@ -28,7 +28,7 @@ helm show values hashicorp/vault --version 0.32.0 > values.yaml
 The Vault cluster should have the following configurations:
 * Standalone Vault: Configure Vault to run with 1 replica.
 * Raft Storage Backend: Enable the Raft storage backend.
-* Configure Vault to use TLS for secure communication. You will need to provide your own certificates or enable auto-generation of certificates (use the example [here](https://developer.hashicorp.com/vault/tutorials/kubernetes/kubernetes-minikube-tls#install-the-vault-helm-chart)).
+* Configure Vault to use TLS for secure communication. You will need to provide your own certificates or enable auto-generation of certificates (use the example [here](https://developer.hashicorp.com/vault/tutorials/kubernetes/kubernetes-minikube-tls#create-the-certificate)).
 * Enable the Vault web UI for easier management and configuration.
 * Configure Kubernetes liveness and readiness probes to ensure Vault's health status is properly monitored
 * Set resource requests and limits for Vault to ensure it has enough resources to run efficiently and prevent over-provisioning.
@@ -89,11 +89,11 @@ Now that Vault is initialized and unsealed, set the Vault address to the service
 
 Run the following command in your terminal to export the Vault address:
 
-In another terminal start port forwarding
+Start port forwarding
 ```bash
 kubectl port-forward svc/vault 8200:8200 -n vault &
 ```
-
+Configure vault client towards the vault in the minikube
 ```bash
 export VAULT_ADDR="https://127.0.0.1:8200"
 export VAULT_SKIP_VERIFY="true"
@@ -106,9 +106,6 @@ Now Login to Vault
 
 ```bash
 vault status
-```
-
-```bash
 vault login $(jq -r ".root_token" cluster-keys.json)
 ```
 
