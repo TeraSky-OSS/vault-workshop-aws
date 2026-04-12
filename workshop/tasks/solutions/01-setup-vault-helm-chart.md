@@ -2,7 +2,7 @@
 
 In this section, we will walk through the steps to deploy HashiCorp Vault on a Kubernetes cluster using Helm. This setup will allow you to manage secrets and other sensitive data securely in your Kubernetes environment.
 
-> **Note**: If you used hashicorp tutorial you can jump to [here](###6)
+> **Note**: If you used the HashiCorp tutorial, you can jump to [6. Set Vault Address](#6-set-vault-address)
 
 ## Steps for Setting Up Vault with Helm Chart
 

@@ -12,5 +12,4 @@ sudo apt-get update && sudo apt-get install -y \
   unzip \
   tree
 
-  tan
   sudo snap install vault
