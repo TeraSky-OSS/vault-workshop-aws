@@ -133,7 +133,7 @@ Permanently delete a version of the secret.
 vault kv destroy -versions=1 kv2/my-secret
 ```
 
-Unlike a soft **delete**, **destroy** removes that version’s secret data from storage. It cannot be **undelete**d. Prove it by asking for that version again—Vault should report an error (for example that the data is missing or the version was destroyed), not the previous username/password:
+Unlike a soft **delete**, **destroy** removes that version’s secret data from storage. It cannot be **undelete**d. Read that version again—the CLI still prints the path and **Metadata**, but **`destroyed` is `true`** and the previous `username` / `password` fields are gone:
 
 ```bash
 vault kv get -version=1 kv2/my-secret
