@@ -100,7 +100,9 @@ Retrieve a specific version of the secret.
 
 ```bash
 vault kv get -version=1 kv2/my-secret
-# Or
+```
+*Or*
+```
 vault kv get -version=2 kv2/my-secret
 ```
 
@@ -118,11 +120,23 @@ Recover a deleted version of the secret.
 vault kv undelete -versions=1 kv2/my-secret
 ```
 
+**Undelete** clears the “deleted” flag on that version in the KV v2 metadata. The data was never wiped by a normal delete—only hidden from the latest read—so after undelete, that version behaves like a normal version again. Confirm by reading it explicitly; you should see the same key/value data as before the delete:
+
+```bash
+vault kv get -version=1 kv2/my-secret
+```
+
 #### 9. **Permanently Destroy Secrets**
 Permanently delete a version of the secret.
 
 ```bash
 vault kv destroy -versions=1 kv2/my-secret
+```
+
+Unlike a soft **delete**, **destroy** removes that version’s secret data from storage. It cannot be **undelete**d. Prove it by asking for that version again—Vault should report an error (for example that the data is missing or the version was destroyed), not the previous username/password:
+
+```bash
+vault kv get -version=1 kv2/my-secret
 ```
 
 ---
