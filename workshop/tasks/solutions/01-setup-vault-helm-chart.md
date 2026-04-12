@@ -36,7 +36,7 @@ The Vault cluster should have the following configurations:
 
 ### 3. **Install Vault Using Helm**
 
-Run the following command to install Vault in the `vault` namespace with you `vault-values.yaml` file:
+Run the following command to install Vault in the `vault` namespace with your `vault-values.yaml` file:
 
 ```bash
 helm upgrade -i vault hashicorp/vault --version 0.32.0 -f vault-values.yaml --namespace vault --create-namespace
