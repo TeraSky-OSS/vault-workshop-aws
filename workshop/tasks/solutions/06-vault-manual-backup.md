@@ -1,97 +1,123 @@
+Issues found:
+
+1. Step 3 has no "Step 1" label - jumps straight to init block
+2. After `snapshot restore`, vault-0 will restart and come sealed with the ORIGINAL keys, not the temp ones. The temp unseal step is valid but the restore wipes that init - the explanation is missing
+3. `kubectl delete pod vault-0` in Step 2 is redundant - scaling to 0 and back to 1 already creates a fresh pod
+4. port-forward is started before `vault login` but there is no `wait` or check - on slow machines the next command races against it
+5. Step 4 "Confirm Vault is usable" says "Expect Sealed false after successful unseal" but at that point vault is still sealed - the unseal with original keys happens AFTER that block, making the comment wrong
+6. The closing code block for the unseal section is never closed before the Conclusion
+
+Here is the corrected version:
+
+---
+
 # Vault Workshop - Vault Manual Snapshot
 
-In this section, we will create a manual snapshot of the Vault data, simulate a data loss by deleting Vault’s data in Minikube, and then restore the snapshot to recover the Vault data.
+In this section, we will create a manual snapshot of the Vault data, simulate a data loss by deleting Vault's data in Minikube, and then restore the snapshot to recover the Vault data.
 
 ---
 
-### **Step 1: Create a Manual Snapshot**
+### Step 1: Create a Manual Snapshot
 
-1. **Create a snapshot**:
-   Use the `vault operator raft snapshot save` command to create a snapshot of the Vault data.
-   ```bash
-   vault operator raft snapshot save vault-data.snap
-   ```
+1. Create a snapshot using the vault operator raft snapshot save command:
+```bash
+vault operator raft snapshot save vault-data.snap
+```
 
-2. **Verify the snapshot**:
-   Check that the snapshot file has been created.
-   ```bash
-   ll vault-data.snap
-   ```
+2. Verify the snapshot file exists:
+```bash
+ls -l vault-data.snap
+```
 
 ---
 
-### **Step 2: Simulate Data Loss**
+### Step 2: Simulate Data Loss
 
-1. **Delete Vault data**:
-   ```bash
-   # Scale down vault
-   kubectl scale statefulset vault -n vault --replicas=0
-   
-   # Wait for pod to terminate
-   kubectl get pod -n vault -w
-   
-   # Now delete the data via a temp pod using the same PVC
-   kubectl run vault-cleanup --rm -it --restart=Never \
-     --namespace=vault \
-     --image=busybox \
-     --overrides='{"spec":{"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"data-vault-0"}}],"containers":[{"name":"vault-cleanup","image":"busybox","command":["sh"],"stdin":true,"tty":true,"volumeMounts":[{"name":"data","mountPath":"/vault/data"}]}]}}' \
-     -- sh
-   
-   # Inside the pod:
-   rm -rf /vault/data/*
-   exit
-   
-   # Scale vault back up
-   kubectl scale statefulset vault -n vault --replicas=1
-   kubectl get pod -n vault
-   ```
+1. Scale down Vault, wipe the PVC data, then scale back up:
+```bash
+# Scale down vault so the PVC is released
+kubectl scale statefulset vault -n vault --replicas=0
 
-2. **Restart the Vault pod**:
-   Restart the Vault pod to confirm that the data is no longer available.
-   ```bash
-   kubectl delete pod -n vault vault-0
-   kubectl get pods -n vault
-   ```
+# Wait until vault-0 is gone (Ctrl+C to stop watching)
+kubectl get pod -n vault -w
 
-   When the pod restarts, Vault will not function correctly due to missing data.
+# Wipe the data via a temp pod mounting the same PVC
+kubectl run vault-cleanup --rm --restart=Never \
+  --namespace=vault \
+  --image=busybox \
+  --overrides='{"spec":{"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"data-vault-0"}}],"containers":[{"name":"vault-cleanup","image":"busybox","command":["sh","-c","rm -rf /vault/data/*"],"volumeMounts":[{"name":"data","mountPath":"/vault/data"}]}]}}' \
+  --attach
+
+# Scale vault back up
+kubectl scale statefulset vault -n vault --replicas=1
+
+# Wait for vault-0 to be Running
+kubectl get pod -n vault -w
+```
+
+2. Confirm Vault sees an empty Raft store. You should see Initialized false and Sealed true - this is the simulated disaster:
+```bash
+kubectl exec -n vault vault-0 -- vault status
+# Expect: Initialized false  (empty Raft store after wipe)
+#         Sealed      true
+```
 
 ---
 
-### **Step 3: Restore the Snapshot**
+### Step 3: Restore the Snapshot
 
-1. **Recreate the persistent volume and claim**:
-   Recreate the storage for Vault. You can use the same YAML configuration used during the initial setup or let the Helm chart manage it:
-   ```bash
-   helm upgrade -i vault hashicorp/vault --version 0.28.0 -f vault-values.yaml --namespace vault --create-namespace
-   kubectl delete pod -n vault vault-0
-   ```
+1. Vault requires an initialized and unsealed node before snapshot restore can run. Initialize a temporary single-key cluster and unseal it:
+```bash
+kubectl exec -n vault vault-0 -- vault operator init \
+    -key-shares=1 \
+    -key-threshold=1 \
+    -format=json > temp_cluster-keys.json
 
-   > **Note**: Vault is now not initialized and practically is a new vault cluster we will need to reinitialize it and unseal it and the restore the data.
+VAULT_UNSEAL_KEY=$(jq -r ".unseal_keys_b64[]" temp_cluster-keys.json)
+kubectl exec -n vault vault-0 -- vault operator unseal $VAULT_UNSEAL_KEY
 
-2. **Restore the snapshot**:
-   Use the snapshot file created earlier to restore the Vault data.
-   ```bash
-   vault operator raft snapshot restore -force vault-data.snap
-   ```
+# Confirm: Initialized true, Sealed false
+kubectl exec -n vault vault-0 -- vault status
+```
 
-3. **Verify the restoration**:
-   Check that the data has been restored and Vault is operational.
-   ```bash
-   vault status
-   ```
+2. Start port-forward and wait for it to be ready, then point the Vault client at it:
+```bash
+kubectl port-forward svc/vault 8200:8200 -n vault &
+sleep 2
 
-4. **Unseal Vault**:
-   ```bash
-   vault operator unseal $VAULT_UNSEAL_KEY
-   ```
+export VAULT_ADDR="https://127.0.0.1:8200"
+export VAULT_SKIP_VERIFY="true"
 
-   > **Note**: Use the old unseal keys since we restored the vault cluster.
-   > **Note**: Inspect all the changes we made along the workshop and see that everything exists.
+vault status
+```
+
+3. Log in with the temporary root token and restore the snapshot. The restore replaces all Raft data with the snapshot content, discarding the temporary init:
+```bash
+vault login $(jq -r ".root_token" temp_cluster-keys.json)
+
+vault operator raft snapshot restore -force vault-data.snap
+```
+
+4. After restore, vault-0 restarts sealed with the original snapshot keys. Unseal it using the keys from when the snapshot was taken:
+
+> Note: If you no longer have the original cluster-keys.json you cannot unseal the restored cluster. The temp keys from step 1 are gone - the restore overwrote them.
+
+```bash
+VAULT_UNSEAL_KEY=$(jq -r ".unseal_keys_b64[]" cluster-keys.json)
+kubectl exec -n vault vault-0 -- vault operator unseal $VAULT_UNSEAL_KEY
+```
+
+5. Confirm Vault is initialized, unsealed, and active:
+```bash
+vault status
+# Expect: Initialized true
+#         Sealed      false
+```
 
 ---
 
-### **Conclusion**
+### Conclusion
 
-In this section, we successfully created a manual snapshot of the Vault data, simulated a data loss by deleting the Vault data in kubernetes, and restored the Vault using the snapshot. This process ensures that you can recover your Vault data in case of unexpected failures.
+In this section, we created a manual snapshot, simulated data loss by wiping the PVC, and restored Vault from the snapshot. This process ensures you can recover Vault data in case of unexpected failures.
 
 Next: [Cleanup](./cleanup)
