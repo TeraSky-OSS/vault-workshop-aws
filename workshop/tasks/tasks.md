@@ -52,20 +52,18 @@
    - Define a policy for read-only access to a KV v2 secret engine
    - Define a policy for read-write access to a KV v2 secret engine
    - Define a policy for admin access
-   - Create a token with the `readonly` policy
-   - Create a token with the `readwrite` policy
-   - Create a token with the `admin` policy
-   - Perform different operations with each token 
-     - Login with the `readonly` token
-       - attempt to read and write a secret
+   - Enable Userpass (if not already) and create users with passwords, each attached to one policy (`readonly`, `readwrite`, `admin`)
+   - Perform different operations as each user (Userpass login)
+     - Log in as the read-only user
+       - Attempt to read and write a secret
        - Attempt to perform an admin operation, such as enabling a new secret engine
-     - Login with the `readwrite` token
-       - attempt to read and write a secret
+     - Log in as the read-write user
+       - Attempt to read and write a secret
        - Attempt to perform an admin operation, such as enabling a new secret engine
-     - Login with the `admin` token
+     - Log in as the admin user
        - Attempt to perform an admin operation, such as enabling a new secret engine
-     - Policy Enforcement
-       - List policies assigned to a token
+     - Policy enforcement
+       - Inspect policies on the token (`vault token lookup`)
        - Test access to restricted paths
  - Detailed solution is [here](./solutions/04-vault-policies.md)
 ## 5. Vault Database Secret Engine
