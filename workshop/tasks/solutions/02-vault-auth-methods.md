@@ -99,7 +99,9 @@ subjects:
   namespace: default
 EOF
 ```
-   
+
+   Vault will ask the Kubernetes API whether incoming pod tokens are valid (**TokenReview**). The next commands collect what Vault needs for that: the **API server URL** (`KUBE_HOST`), the **cluster CA** so TLS to the API is trusted (`KUBE_CA_CERT`), and a **JWT for the `default` service account** (`TOKEN_REVIEW_JWT`) that is allowed to call TokenReview (via the `system:auth-delegator` binding above).
+
    ```bash
    TOKEN_REVIEW_JWT=$(kubectl get secret default -n default -o go-template='{{ .data.token }}' | base64 --decode)
    KUBE_CA_CERT=$(kubectl config view --raw --minify --flatten -o jsonpath='{.clusters[].cluster.certificate-authority-data}' | base64 --decode)
@@ -115,23 +117,46 @@ EOF
 
 
 3. **Create a Kubernetes role**:
-   Define a Vault role that Kubernetes pods can assume.
+
+   Define a Vault role that Kubernetes pods (or service accounts) can use to log in. **`bound_service_account_names`** and **`bound_service_account_namespaces`** limit which identities may use this role. **`audience`** must match the JWT’s **`aud`** claim so Vault only accepts tokens meant for the Kubernetes API.
    ```bash
    vault write auth/kubernetes/role/my-role \
      bound_service_account_names="default" \
      bound_service_account_namespaces="default" \
+     audience="https://kubernetes.default.svc.cluster.local" \
      policies="default" \
      ttl="1h"
    ```
 
-4. **Login with Kubernetes**:
-   Use the Kubernetes service account token to authenticate.
+4. **Log in from a real pod**:
+   The `TOKEN_REVIEW_JWT` you used in step 2 is only for Vault’s **TokenReview** calls to the API. A normal workload does not use that secret on your laptop—it uses the token Kubernetes **mounts into the pod** at `/var/run/secrets/kubernetes.io/serviceaccount/token` (for the pod’s service account).
+
+   Start a short-lived pod in **`default`** with the **`default`** service account (same bounds as `my-role`). From inside the cluster, point the CLI at the Vault **Service** created by Helm (`vault` in namespace `vault`). This workshop uses TLS on Vault; `VAULT_SKIP_VERIFY=true` keeps the example short—in production you would trust Vault’s CA inside the pod instead.
+
    ```bash
-   vault write auth/kubernetes/login role="my-role" jwt=$TOKEN_REVIEW_JWT
+   kubectl run vault-k8s-login -n default --rm -it --restart=Never \
+     --image=hashicorp/vault:1.21.1 \
+     --env "VAULT_ADDR=https://vault.vault.svc.cluster.local:8200" \
+     --env "VAULT_SKIP_VERIFY=true" \
+     --command -- /bin/sh
    ```
 
+   Inside the pod shell, read the mounted service account JWT and log in with **`my-role`**:
+
+   ```bash
+   JWT=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+   vault write auth/kubernetes/login role="my-role" jwt="$JWT"
+   ```
+
+   ```bash
+   export VAULT_TOKEN=$(vault write -field=token auth/kubernetes/login role="my-role" jwt="$JWT")
+   vault token lookup
+   ```
+
+   Type `exit` when finished; `--rm` deletes the pod.
+
 #### Logging in with Kubernetes:
-After successful authentication, Vault will return a token that can be used to interact with Vault resources.
+That flow mirrors how an application running in the cluster authenticates: it uses **its** projected or mounted service account token.
 
 ---
 
