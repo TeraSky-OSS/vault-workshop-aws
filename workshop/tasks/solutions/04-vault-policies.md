@@ -1,6 +1,6 @@
 # Vault Workshop - Create Vault Policies
 
-In this section, we will explore Vault policies, create and assign them to tokens, and test how policies control access to Vault resources. Policies define the level of access a user or application has to Vault's secrets and functionalities.
+In this section, we will define Vault **policies**, attach them to **Userpass** users (username + password)—similar to how many teams onboard operators—and test how those policies flow into the **tokens** Vault issues at login. Policies define what each identity may do in Vault.
 
 ---
 
@@ -80,98 +80,121 @@ Before we create policies, let's enable the KV v2 secrets engine and store some 
 
 ---
 
-### **Step 3: Generate Tokens with Specific Policies**
+### **Step 3: Create Userpass users and attach policies**
 
-1. **Create a token with the `readonly` policy**:
-   ```bash
-   vault token create -policy="readonly" -ttl="1h"
-   ```
-   Save the generated token for testing.
+In a typical process, an admin **creates identities** (here, Userpass users) and assigns **policy names** to each user. When someone logs in, Vault issues a **token** that carries those policies—no need to hand-copy long token strings.
 
-2. **Create a token with the `readwrite` policy**:
+1. **Enable the Userpass auth method** (skip if you already enabled it in the auth-methods lab—Vault will say the path is already in use):
    ```bash
-   vault token create -policy="readwrite" -ttl="1h"
+   vault auth enable userpass
    ```
-   Save this token as well.
 
-3. **Create a token with the `admin` policy**:
+2. **Create three users** and attach one policy each. The workshop uses the same password for simplicity; use **unique strong passwords** in production, and avoid putting real passwords on the command line (they can end up in shell history)—prefer an interactive `vault login` or a secret manager.
+
+   | User | Policy | Intended role |
+   |------|--------|----------------|
+   | `demo-readonly` | `readonly` | Read/list KV only |
+   | `demo-readwrite` | `readwrite` | Read/write KV |
+   | `demo-admin` | `admin` | Broad admin-style access |
+
    ```bash
-   vault token create -policy="admin" -ttl="1h"
+   vault write auth/userpass/users/demo-readonly \
+     password="changeme" \
+     policies="readonly"
+
+   vault write auth/userpass/users/demo-readwrite \
+     password="changeme" \
+     policies="readwrite"
+
+   vault write auth/userpass/users/demo-admin \
+     password="changeme" \
+     policies="admin"
    ```
-   Save this token for later use.
 
 ---
 
-### **Step 4: Test Access with Different Tokens**
+### **Step 4: Log in as each user and test access**
 
-1. **Login with the `readonly` token**:
-   ```bash
-   vault login <readonly-token>
-   ```
+If you still have **`VAULT_TOKEN` set** from the root token (or any earlier step), the CLI keeps using that value and **ignores** the token `vault login` writes to the token helper. Clear it before Userpass login:
 
-   - Attempt to read a secret:
+```bash
+unset VAULT_TOKEN
+```
+
+Use **Userpass login** so the CLI gets a fresh token for that user. Example (non-interactive—fine for the lab):
+
+```bash
+vault login -method=userpass username=demo-readonly password=changeme
+```
+
+1. **As `demo-readonly`** (after the `vault login` above):
+
+   - Read a secret (should succeed):
      ```bash
      vault kv get secret/data/example
      ```
-     This should succeed.
 
-   - Attempt to write a secret:
+   - Write a secret (should **fail**—policy is read-only):
      ```bash
      vault kv put secret/data/example key="new-value"
      ```
-     This should fail because the `readonly` policy only allows reading and listing secrets.
 
-2. **Login with the `readwrite` token**:
+2. **As `demo-readwrite`**:
    ```bash
-   vault login <readwrite-token>
+   vault login -method=userpass username=demo-readwrite password=changeme
    ```
 
-   - Attempt to read a secret:
+   - Read (should succeed):
      ```bash
      vault kv get secret/data/example
      ```
-     This should succeed.
 
-   - Attempt to write a secret:
+   - Write (should succeed):
      ```bash
      vault kv put secret/data/example key="new-value"
      ```
-     This should succeed because the `readwrite` policy allows creating, updating, and deleting secrets.
 
-   - Attempt to perform an admin operation, such as enabling a new secret engine:
+   - Enable a new secrets engine (should **fail**—no `sudo` on this policy):
      ```bash
      vault secrets enable -path=my-secrets kv
      ```
-     This should fail because `readwrite` policy lacks `sudo` capabilities.
 
-3. **Login with the `admin` token**:
+3. **As `demo-admin`**:
    ```bash
-   vault login <admin-token>
+   vault login -method=userpass username=demo-admin password=changeme
    ```
 
-   - Attempt to perform an admin operation, such as enabling a new secret engine:
+   - Enable a new secrets engine (should succeed):
      ```bash
      vault secrets enable -path=my-secrets kv
      ```
-     This should succeed because the `admin` policy has `sudo` capability, allowing full administrative access.
 
 ---
 
-### **Step 5: Verify Policy Enforcement**
+### **Step 5: Verify policy enforcement**
 
-1. **List policies assigned to a token**:
-   For any token, you can verify the assigned policies:
+1. **See policies on the token you are using**:
+   After any `vault login` in step 4, Vault’s active token reflects the user’s attached policies. Inspect it:
    ```bash
-   vault token lookup <token>
+   vault token lookup
+   ```
+   Check the **`policies`** line—for example, after logging in as `demo-readonly` you should see **`readonly`** (Vault may also include **`default`** depending on configuration).
+
+2. **Optional: compare identities without switching the CLI token**:
+   You can mint a one-off token for a user and inspect it (useful for scripts). Example for the read-only user:
+   ```bash
+   vault token lookup "$(vault write -field=token auth/userpass/login/demo-readonly password=changeme)"
    ```
 
-2. **Test access to restricted paths**:
-   - Try accessing paths that are not covered by the assigned policy to see how Vault enforces restrictions. For example, a `readonly` token should not be able to create or delete secrets.
+3. **Try paths outside the policy**:
+   For example, while logged in as `demo-readonly` or `demo-readwrite`, attempt paths under `secret/data/` that do not exist or operations the policy does not allow, and confirm Vault denies them.
 
 ---
 
 ### **Conclusion**
 
-In this section, we explored how to define and configure Vault policies, generate tokens with specific policies, and test their access to Vault resources. By using these policies, we can control who can access and modify secrets in Vault, ensuring that sensitive data is protected based on the principle of least privilege.
+In this section, we defined policies, **bound them to Userpass users**, logged in like an operator would, and saw how Vault maps users → **tokens** → **allowed API paths**. The same policy documents can be attached to other auth methods (AppRole, LDAP, OIDC, and so on) for applications and integrations.
+
+If a later workshop step expects the **root** token, switch back with `export VAULT_TOKEN=$(jq -r ".root_token" cluster-keys.json)` (from your `cluster-keys.json`).
 
 Next: [Use Vault Database Secret Engine](./05-vault-secrets-database.md)
