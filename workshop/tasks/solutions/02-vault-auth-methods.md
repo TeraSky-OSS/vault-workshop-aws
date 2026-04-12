@@ -1,9 +1,53 @@
 # Vault Workshop - Configure Vault Auth Methods
 
-In this section, we will configure four different authentication methods in Vault: **AppRole**, **Token**, and **Kubernetes**. 
+In this section, we will configure **username/password (Userpass)**, **AppRole**, and **Kubernetes** authentication in Vault.
 Each method will be configured with specific tasks, followed by instructions on how to log in using the respective method.
 
-### 1. **AppRole Authentication**
+### 1. **Userpass (username/password)**
+
+**Userpass** lets people sign in with a username and password stored in Vault. It is a simple choice for interactive or operator access; prefer **AppRole** or **Kubernetes** auth for machines and workloads.
+
+#### Tasks:
+1. **Enable the Userpass authentication method**:
+   ```bash
+   vault auth enable userpass
+   ```
+
+2. **Create a user**:
+   Attach policies (here, `default`) and set a password. Replace the password with a strong value outside of demos.
+   ```bash
+   vault write auth/userpass/users/workshop-user \
+     password="changeme" \
+     policies="default"
+   ```
+
+3. **Log in**:
+   Interactive (Vault prompts for the password):
+   ```bash
+   vault login -method=userpass username=workshop-user
+   ```
+
+   Non-interactive (scripts or CI):
+   ```bash
+   vault write auth/userpass/login/workshop-user password="changeme"
+   ```
+
+#### After Userpass login:
+Vault issues a **token** for that user. To keep using the CLI in the same shell without retyping the password:
+
+```bash
+export VAULT_TOKEN=$(vault write -field=token auth/userpass/login/workshop-user password="changeme")
+```
+
+For the rest of this workshop (which assumes admin rights to enable auth methods and write roles), set `VAULT_TOKEN` back to the **root token** from `cluster-keys.json`:
+
+```bash
+export VAULT_TOKEN=$(jq -r ".root_token" cluster-keys.json)
+```
+
+---
+
+### 2. **AppRole Authentication**
 
 **AppRole** is an authentication method that allows machines or applications to authenticate with Vault using a role-based approach. The AppRole method is commonly used for automated workflows.
 
@@ -40,7 +84,7 @@ Each method will be configured with specific tasks, followed by instructions on 
    - After successful authentication, Vault will return a client token.
 
 #### Logging in with AppRole:
-With `ROLE_ID` and `SECRET_ID` set `VAULT_TOKEN` from the login response so the CLI uses this AppRole. Either copy the `token` value from step 5, or capture it in one step:
+In the same shell (so `ROLE_ID` and `SECRET_ID` are still set), put the AppRole token into `VAULT_TOKEN` for the CLI:
 
 ```bash
 export VAULT_TOKEN=$(vault write -field=token auth/approle/login role_id="$ROLE_ID" secret_id="$SECRET_ID")
@@ -61,7 +105,7 @@ export VAULT_TOKEN=$(jq -r ".root_token" cluster-keys.json)
 ---
 
 
-### 2. **Kubernetes Authentication**
+### 3. **Kubernetes Authentication**
 
 **Kubernetes** authentication allows applications running within a Kubernetes cluster to authenticate with Vault.
 
@@ -162,7 +206,7 @@ That flow mirrors how an application running in the cluster authenticates: it us
 
 ### Conclusion
 
-In this section, we have covered the process of configuring and logging in with four different authentication methods in Vault: AppRole, Token, and Kubernetes. Each method has its specific use cases, and you can use the method that best fits your needs for managing access to Vault.
+In this section, we have covered configuring and logging in with **Userpass** (username/password), **AppRole**, and **Kubernetes** authentication. Each method suits different callers: operators versus automation versus in-cluster workloads.
 
 
 Next: [Use Vault KV Secret Engine](./03-vault-secrets-kv.md)
