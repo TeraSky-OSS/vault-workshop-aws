@@ -52,6 +52,12 @@ Example: verify the token and see its TTL and policies:
 vault token lookup
 ```
 
+The AppRole token only has the `default` policy. For the rest of this workshop, sign back in with the **root token** from `cluster-keys.json` (same as in the Helm setup guide):
+
+```bash
+vault login $(jq -r ".root_token" cluster-keys.json)
+```
+
 ---
 
 
