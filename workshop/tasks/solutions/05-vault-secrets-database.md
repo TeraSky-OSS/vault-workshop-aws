@@ -1,10 +1,10 @@
-# Vault Workshop - Vault Database Secret Engine
+# Vault Workshop - Dynamic Secrets - Vault Database Secret Engine
 
 In this section, we will configure the **Database Secret Engine** in Vault to dynamically generate database credentials and rotate them. We will set up and configure two databases—**PostgreSQL** and **MongoDB**—on Minikube and integrate them with Vault.
 
 ---
 
-## **PostgreSQL on Minikube**
+## **PostgreSQL**
 
 ### Deploy PostgreSQL on Minikube**
 
@@ -30,7 +30,7 @@ In this section, we will configure the **Database Secret Engine** in Vault to dy
    kubectl get pods -n postgres
    ```
 
-3. **Forward the PostgreSQL service to your local machine**:
+3. **Connect to PostgreSQL with a temporary in-cluster `psql` pod**:
 
    ```bash
    export POSTGRES_PASSWORD=$(kubectl get secret --namespace postgres postgres-postgresql -o jsonpath="{.data.postgres-password}" | base64 -d)
@@ -42,6 +42,7 @@ In this section, we will configure the **Database Secret Engine** in Vault to dy
    --command -- psql --host postgres-postgresql -U postgres -d mydb -p 5432
    ```
 
+type `exit` to exit the client
 ---
 
 ### Configure Vault for PostgreSQL**
@@ -90,20 +91,20 @@ In this section, we will configure the **Database Secret Engine** in Vault to dy
      max_ttl="24h"
    ```
 
-5. **Generate dynamic credentials and access the db with the dynamic credentials**
+5. **Generate dynamic credentials and pass them straight into `psql`**
 
-   Generate dynamic credentials
-   ```bash
-   vault read postgres/creds/my-role
-   ```
+   Read the lease **once** and put `username` and `password` into shell variables (two separate `vault read` calls would create **two** different database users). Then wire them into `PGPASSWORD` and `psql -U`—no manual copy-paste:
 
-   Now login with the new dynamic credentials
    ```bash
+   CREDS_JSON=$(vault read -format=json postgres/creds/my-role)
+   export PG_USER=$(echo "$CREDS_JSON" | jq -r '.data.username')
+   export PG_PASS=$(echo "$CREDS_JSON" | jq -r '.data.password')
+
    kubectl run postgres-postgresql-client --rm --tty -i --restart='Never' \
-   --namespace postgres \
-   --image postgres:17 \
-   --env="PGPASSWORD=<new_password>" \
-   --command -- psql --host postgres-postgresql -U <new_username> -d mydb -p 5432
+     --namespace postgres \
+     --image postgres:17 \
+     --env="PGPASSWORD=$PG_PASS" \
+     --command -- psql --host postgres-postgresql -U "$PG_USER" -d mydb -p 5432
    ```
 
    You can run this query to list data with the newly created user provisioned by vault.
@@ -120,10 +121,15 @@ In this section, we will configure the **Database Secret Engine** in Vault to dy
    ```
 
    This will fail since the role only allows select from tables.
+   `exit`
+ To only inspect the credential without connecting yet:
 
+   ```bash
+   vault read postgres/creds/my-role
+   ```
 ---
 
-## **MongoDB on Minikube**
+## **MongoDB**
 
 ### Deploy MongoDB on Minikube**
 
@@ -144,12 +150,12 @@ In this section, we will configure the **Database Secret Engine** in Vault to dy
    export MONGODB_ROOT_PASSWORD=$(kubectl get secret --namespace mongodb mongodb -o jsonpath="{.data.mongodb-root-password}" | base64 --decode)
    kubectl run --namespace mongodb mongodb-client --rm --tty -i --restart='Never' --image=mongo:latest --command -- mongosh --host mongodb --port 27017 -u root -p $MONGODB_ROOT_PASSWORD
    ```
-
+   `exit`
 ---
 
 ### **Configure Vault for MongoDB**
 
-1. **Enable the Database Secret Engine**:
+1. **Enable the Database Secret Engine for MongoDB**:
    ```bash
    vault secrets enable -path mongodb database
    ```
@@ -189,34 +195,41 @@ In this section, we will configure the **Database Secret Engine** in Vault to dy
       max_ttl="24h"
    ```
 
-5. **Generate dynamic credentials**:
+5. **Generate dynamic credentials and pass them straight into `mongosh`**
+
+   Read the lease **once** and put `username` and `password` into shell variables (two separate `vault read` calls would create **two** different MongoDB users). Then pass them to `mongosh`—no manual copy-paste:
+
+   ```bash
+   CREDS_JSON=$(vault read -format=json mongodb/creds/my-role)
+   export MONGO_USER=$(echo "$CREDS_JSON" | jq -r '.data.username')
+   export MONGO_PASS=$(echo "$CREDS_JSON" | jq -r '.data.password')
+
+   kubectl run --namespace mongodb mongodb-client --rm --tty -i --restart='Never' \
+     --image=mongo:latest \
+     --command -- mongosh --host mongodb --port 27017 -u "$MONGO_USER" -p "$MONGO_PASS"
+   ```
+
+   To only inspect the credential without connecting yet:
+
    ```bash
    vault read mongodb/creds/my-role
    ```
 
-6. **Access the db with the dynamic credentials**
+   Inside `mongosh`, run read-only introspection: **`show dbs`** lists databases you may see, **`use admin`** switches context to the `admin` database, and **`show collections`** lists collections there (all consistent with **read** access):
 
-   After generating the dynamic credentials try accessing MongoDB again
-
-   ```bash
-   kubectl run --namespace mongodb mongodb-client --rm --tty -i --restart='Never' --image=mongo:latest --command -- mongosh --host mongodb --port 27017 -u <new_user> -p <new_password>
-   ```   
-
-   Try running this query
    ```js
    show dbs
    use admin
    show collections
    ```
 
-   Now try running this query
+   Then try a **write**: creating a collection requires **create** privileges, so this should **fail** with the Vault role that only grants **read**:
+
    ```js
-   use admin
    db.createCollection("testCollection")
    ```
 
-   This should fail since we only gave the role `read` permissions.
-
+   Type `exit` to leave `mongosh` and the client pod.
 ---
 
 ## **Conclusion**
