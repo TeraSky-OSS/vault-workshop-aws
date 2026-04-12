@@ -7,7 +7,7 @@ Before starting the Vault workshop, make sure you have the following prerequisit
     ```sh
     minikube start
     ```
-- **[Vault CLI](https://releases.hashicorp.com/vault/1.16.3/vault_1.16.3_linux_amd64.zip)**: The Vault CLI (Version 1.16.3) to interact with Vault instances and perform various tasks during the workshop.
+- **[Vault CLI](https://releases.hashicorp.com/vault/1.21.2/vault_1.21.2_linux_amd64.zip)**: The Vault CLI (Version 1.16.3) to interact with Vault instances and perform various tasks during the workshop.
  
     ```sh
     sudo snap install vault
