@@ -153,7 +153,7 @@ EOF
    vault token lookup
    ```
 
-   Type `exit` when finished; `--rm` deletes the pod.
+   Type `exit` when finished; `--rm` parameter deletes the pod automatically.
 
 #### Logging in with Kubernetes:
 That flow mirrors how an application running in the cluster authenticates: it uses **its** projected or mounted service account token.
