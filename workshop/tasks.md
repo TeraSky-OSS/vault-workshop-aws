@@ -4,6 +4,6 @@ Throughout this workshop, you will complete various hands-on exercises to implem
 - Setting up Vault on Kubernetes
 - Configuring different authentication methods
 - Working with KV secrets and dynamic secrets engines
-- Auditing, monitoring, and backing up Vault
+- Backing up Vault
 
 Next: [prerequisites](./tasks/00-prerequisites.md)
