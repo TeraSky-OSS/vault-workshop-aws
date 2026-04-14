@@ -7,6 +7,7 @@
   - [6. Vault Manual backup](#6-vault-manual-backup)
   - [7. Vault HA in action](#7-vault-ha-in-action)
   - [Bonus: Kubernetes Production Patterns](#Bonus-Kubernetes-Production-Patterns)
+  - [Developer Section: Secret Consumption Patterns][#Developer-Section-Secret-Consumption-Patterns]
 # Workshop tasks
 ## 1. Vault Setup with Helm Chart
    - Download the vault official helm chart and configure the values in the helm chart as following:
