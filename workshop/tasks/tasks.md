@@ -393,7 +393,7 @@ Tasks:
 - Run `cat /proc/1/environ` - confirm secret is readable from the proc filesystem by any process in the container
 - Switch the same app to the Vault Agent sidecar (B2): remove the env var, read the secret from `/vault/secrets/config` file instead
 - Re-run both checks - confirm the secret no longer appears in env or proc
-- Discuss: env vars survive core dumps, get captured by debug middleware, and are logged by misconfigured frameworks. File-based secrets on tmpfs do not.
+- REasoning: env vars survive core dumps, get captured by debug middleware, and are logged by misconfigured frameworks. File-based secrets on tmpfs do not.
 ----
   - cleanup the deployments by uninstalling all charts and deleting all volumes
     - detailed [here](./cleanup.md)
