@@ -5,6 +5,7 @@
   - [4. Vault Policies](#4-vault-policies)
   - [5. Vault Database Secret Engine](#5-vault-database-secret-engine)
   - [6. Vault Manual backup](#6-vault-manual-backup)
+  - [7. Vault HA in action](#7-vault-ha-in-action)
 # Workshop tasks
 ## 1. Vault Setup with Helm Chart
    - Download the vault official helm chart and configure the values in the helm chart as following:
@@ -132,5 +133,98 @@
   - Restore the snapshot
   - Verify the restoration
   - Detailed solution is [here](./solutions/06-vault-manual-backup.md)
+## 7. Vault HA in action
+
+Confirm 3 pods running with integrated storage (Raft).
+
+```bash
+kubectl get pods -n vault
+kubectl exec -n vault vault-0 -- vault operator raft list-peers
+```
+
+All 3 nodes must appear in the Raft peer list before proceeding.
+
+---
+
+### Step 1 - Identify the Active Leader
+
+Run for each pod until you find the active one.
+
+```bash
+kubectl exec -n vault vault-0 -- vault status | grep "HA Mode"
+kubectl exec -n vault vault-1 -- vault status | grep "HA Mode"
+kubectl exec -n vault vault-2 -- vault status | grep "HA Mode"
+```
+
+Note the pod showing `active`. The others will show `standby`.
+
+---
+
+### Step 2 - Open a Watch Window
+
+In a second terminal, watch pod status in real time.
+
+```bash
+kubectl get pods -n vault -w
+```
+
+---
+
+### Step 3 - Kill the Active Leader
+
+```bash
+kubectl delete pod <active-pod-name> -n vault
+```
+
+---
+
+### Step 4 - Observe Leader Election
+
+In the watch window you will see the deleted pod enter Terminating state.
+Within 2-10 seconds one of the standby pods wins the Raft election and becomes active.
+
+Verify:
+
+```bash
+kubectl exec -n vault <any-remaining-pod> -- vault status | grep "HA Mode"
+```
+
+---
+
+### Step 5 - Confirm Rejoin
+
+Wait for Kubernetes to restart the deleted pod (Running state), then confirm it rejoined as standby.
+
+```bash
+kubectl exec -n vault vault-0 -- vault operator raft list-peers
+```
+
+All 3 nodes should appear again. The restarted pod shows as standby.
+
+---
+
+### What Is Happening Under the Hood
+
+Vault HA with integrated storage uses the Raft consensus protocol.
+
+- Only the active node accepts write requests. Standby nodes forward or redirect clients.
+- Raft requires a quorum of (n/2)+1 nodes to elect a leader. With 3 nodes, 2 is sufficient.
+- Before a write is committed, Raft replicates the log entry to a quorum. No data is lost when the leader dies mid-operation because uncommitted entries are replicated before acknowledgment.
+- Election timeout is configurable. Default in Vault is 2-10 seconds.
+- After restart, the former leader rejoins as a follower (standby) and syncs the log from the new leader.
+
+---
+
+## Key Takeaways
+
+| Concept | Detail |
+|---|---|
+| Write path | Active node only |
+| Read path | Any node (with `vault read` forwarding) |
+| Quorum | 2 of 3 nodes required |
+| Election time | 2-10 seconds |
+| Data loss on leader failure | None (committed entries are replicated) |
+| Pod restart behavior | Rejoins as standby, syncs Raft log automatically |
+----
   - cleanup the deployments by uninstalling all charts and deleting all volumes
     - detailed [here](./cleanup.md)
