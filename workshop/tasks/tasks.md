@@ -6,6 +6,7 @@
   - [5. Vault Database Secret Engine](#5-vault-database-secret-engine)
   - [6. Vault Manual backup](#6-vault-manual-backup)
   - [7. Vault HA in action](#7-vault-ha-in-action)
+  - [Bonus: Kubernetes Production Patterns](#Bonus-Kubernetes-Production-Patterns)
 # Workshop tasks
 ## 1. Vault Setup with Helm Chart
    - Download the vault official helm chart and configure the values in the helm chart as following:
@@ -225,6 +226,173 @@ Vault HA with integrated storage uses the Raft consensus protocol.
 | Election time | 2-10 seconds |
 | Data loss on leader failure | None (committed entries are replicated) |
 | Pod restart behavior | Rejoins as standby, syncs Raft log automatically |
+
+# Bonus: Kubernetes Production Patterns
+
+---
+
+## B1. Auto-Unseal with Transit Secrets Engine
+
+Replace manual unseal with a second Vault instance acting as the unseal provider via its Transit engine.
+
+Tutorial: https://developer.hashicorp.com/vault/tutorials/auto-unseal/autounseal-transit
+
+Tasks:
+- Deploy a second Vault instance (`vault-transit`) in standalone mode
+- Enable the Transit secrets engine on `vault-transit`, create a key named `autounseal`
+- Create a policy granting `encrypt` and `decrypt` on `transit/encrypt/autounseal` and `transit/decrypt/autounseal`
+- Generate a token with that policy
+- Configure the primary Vault Helm values with a `seal "transit"` stanza pointing to `vault-transit`
+- Initialize the primary Vault, confirm seal type shows `transit` in `vault status`
+- Kill `vault-0`, confirm it auto-unseals on restart without operator input
+- Confirm recovery keys are generated instead of unseal keys
+
+---
+
+## B2. Vault Agent Sidecar Injector
+
+Deliver secrets into pods without any app code change via the mutating webhook that ships with the Helm chart.
+
+Tutorial: https://developer.hashicorp.com/vault/tutorials/kubernetes/kubernetes-sidecar
+
+Tasks:
+- Confirm `vault-agent-injector` pod is running
+- Create a KV v2 secret at `internal/database/config` with `username` and `password`
+- Create a Kubernetes service account bound to a Vault role with read access to that path
+- Deploy a test pod with these annotations:
+  - `vault.hashicorp.com/agent-inject: "true"`
+  - `vault.hashicorp.com/role: your-role`
+  - `vault.hashicorp.com/agent-inject-secret-config: internal/data/database/config`
+- Exec into the pod, confirm secret appears at `/vault/secrets/config`
+- Add a template annotation to render the secret as `key=value` format instead of raw JSON
+- Delete the pod, confirm secret re-injects on restart
+
+---
+
+## B3. Vault Secrets Operator (VSO)
+
+Kubernetes-native alternative to the sidecar. Syncs Vault secrets into native Kubernetes Secret objects via CRDs.
+
+Tutorial: https://developer.hashicorp.com/vault/tutorials/kubernetes/vault-secrets-operator
+
+Tasks:
+- Install VSO via Helm: `hashicorp/vault-secrets-operator`
+- Create a `VaultConnection` CRD pointing to your Vault address
+- Create a `VaultAuth` CRD using `method: kubernetes`, referencing a service account
+- Create a `VaultStaticSecret` CRD targeting a KV v2 path
+- Confirm a native Kubernetes Secret is created
+- Update the value in Vault, verify VSO rotates the Kubernetes Secret within the `refreshAfter` interval
+- Mount the resulting Secret into a pod as an env var and confirm the value
+
+> Trade-off: VSO writes to etcd (base64, visible via `kubectl get secret`). Sidecar injector writes to pod tmpfs only, never touches etcd. For regulated workloads the sidecar approach is preferable.
+
+---
+
+## B4. PKI Secrets Engine - Internal TLS for Kubernetes Services
+
+Replace manually managed cluster TLS certs with Vault-issued, auto-rotated certificates.
+
+Tutorial: https://developer.hashicorp.com/vault/tutorials/secrets-management/pki-engine
+
+Tasks:
+- Enable PKI at `pki/`, set `max_lease_ttl` to `87600h`, generate an internal root CA
+- Enable a second PKI mount at `pki_int/`, generate a CSR, sign it with the root CA, import the signed cert back
+- Create a role on `pki_int/` scoped to `svc.cluster.local` with a `24h` TTL
+- Issue a cert for `postgres.postgres.svc.cluster.local`
+- Revoke the cert manually and confirm it appears in the CRL
+- Issue a new cert for the same FQDN and verify it works
+
+---
+
+## Developer Section: Secret Consumption Patterns
+
+For developers who need to consume secrets from application code. Requires only a running Vault instance.
+
+---
+
+### D1. REST API via curl
+
+Understand the raw HTTP API before using any SDK. Every language and tool can consume this.
+
+Tutorial: https://developer.hashicorp.com/vault/tutorials/getting-started/getting-started-apis
+
+Tasks:
+- Start Vault in dev mode: `vault server -dev -dev-root-token-id root`
+- Write a secret via the API:
+  ```bash
+  curl -H "X-Vault-Token: root" \
+    -H "Content-Type: application/json" \
+    -X POST -d '{"data":{"username":"admin","password":"s3cr3t"}}' \
+    http://127.0.0.1:8200/v1/secret/data/myapp/config
+  ```
+- Read the secret back and parse the response with `jq`
+- Authenticate via AppRole: POST to `/v1/auth/approle/login` with `role_id` and `secret_id`, extract `client_token`
+- Re-read the secret using the AppRole token instead of root
+- Call `/v1/sys/leases/renew` to renew the token before expiry
+- Observe the error when calling with an expired or invalid token
+
+> Key point: KV v2 responses nest secrets under `.data.data`, not `.data`. This trips up every developer once.
+
+---
+
+### D2. Python SDK (hvac)
+
+Tutorial: https://developer.hashicorp.com/vault/docs/get-started/developer-qs
+
+Tasks:
+- Install: `pip install hvac`
+- Connect and authenticate with a token:
+  ```python
+  import hvac
+  client = hvac.Client(url='http://127.0.0.1:8200', token='root')
+  assert client.is_authenticated()
+  ```
+- Write and read a KV v2 secret using `client.secrets.kv.v2`
+- Authenticate using AppRole instead of a static token:
+  ```python
+  client.auth.approle.login(role_id='...', secret_id='...')
+  ```
+- If running inside a Kubernetes pod, authenticate using the service account JWT:
+  ```python
+  with open('/var/run/secrets/kubernetes.io/serviceaccount/token') as f:
+      jwt = f.read()
+  client.auth.kubernetes.login(role='myapp', jwt=jwt)
+  ```
+- Read a dynamic database credential from the path used in task 5
+- Handle a missing secret: catch `hvac.exceptions.InvalidPath`
+- Renew the token before expiry using `client.auth.token.renew_self()`
+
+---
+
+### D3. Secret Lease Lifecycle - TTL, Renewal, and Revocation
+
+Tutorial: https://developer.hashicorp.com/vault/tutorials/secrets-management/lease-management
+
+Tasks:
+- Generate a dynamic database credential (reuse task 5's PostgreSQL setup)
+- Note the `lease_id` and `lease_duration` in the response
+- Renew the lease before expiry: `vault lease renew <lease_id>`
+- Confirm the TTL resets up to `max_ttl`
+- Attempt to renew past `max_ttl` - observe the error
+- Revoke the lease manually: `vault lease revoke <lease_id>`
+- Attempt to connect to the database with the revoked credential - confirm rejection
+- Implement the same renewal in Python using `POST /v1/sys/leases/renew`
+
+> Key point: apps that cache dynamic credentials must track TTL and renew proactively, not reactively on auth failure. A credential that expires mid-request causes a harder-to-debug error than a renewal failure.
+
+---
+
+### D4. Env Var Anti-Pattern vs. File-Based Secret
+
+No external tutorial - lab exercise based on the most common developer mistake.
+
+Tasks:
+- Deploy an app that reads `DB_PASSWORD` from an env var sourced from a Kubernetes Secret
+- Exec into the pod: run `env | grep DB_PASSWORD` - confirm plaintext in process environment
+- Run `cat /proc/1/environ` - confirm secret is readable from the proc filesystem by any process in the container
+- Switch the same app to the Vault Agent sidecar (B2): remove the env var, read the secret from `/vault/secrets/config` file instead
+- Re-run both checks - confirm the secret no longer appears in env or proc
+- Discuss: env vars survive core dumps, get captured by debug middleware, and are logged by misconfigured frameworks. File-based secrets on tmpfs do not.
 ----
   - cleanup the deployments by uninstalling all charts and deleting all volumes
     - detailed [here](./cleanup.md)
